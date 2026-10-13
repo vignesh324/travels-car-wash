@@ -8,9 +8,16 @@ Route::get('/sanctum/csrf-cookie', function () {
 });
 
 Route::get('/migrate', function () {
-    Artisan::call('migrate:fresh');
-    Artisan::call('db:seed');
-    return response()->json(['message' => 'Database migrated and seeded']);
+    Artisan::call('migrate:fresh', ['--force' => true]);
+    $migrateOutput = Artisan::output();
+
+    Artisan::call('db:seed', ['--force' => true]);
+    $seedOutput = Artisan::output();
+
+    return response()->json([
+        'migrate' => $migrateOutput,
+        'seed'    => $seedOutput,
+    ]);
 });
 
 Route::get('/cache-clear', function () {
