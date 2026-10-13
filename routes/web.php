@@ -7,10 +7,6 @@ Route::get('/sanctum/csrf-cookie', function () {
     return response()->json(['message' => 'CSRF cookie set']);
 });
 
-Route::get('/{any}', function () {
-    return view('app');
-})->where('any', '.*');
-
 Route::get('/migrate', function () {
     Artisan::call('migrate:fresh --seed');
     return response()->json(['message' => 'Database migrated and seeded']);
@@ -24,3 +20,9 @@ Route::get('/cache-clear', function () {
     Artisan::call('optimize:clear');
     return response()->json(['message' => 'Cache cleared']);
 });
+
+Route::get('/{any}', function () {
+    return view('app');
+})->where('any', '.*');
+
+
