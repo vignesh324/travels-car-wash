@@ -1,0 +1,23 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Serve files from Laravel's public directory when installed in a subfolder
+    RewriteCond %{DOCUMENT_ROOT}/travels-car-wash/public/$1 -f
+    RewriteRule ^(.+)$ public/$1 [L]
+
+    # Serve existing files/directories directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Laravel front controller
+    RewriteRule ^ index.php [L]
+</IfModule>

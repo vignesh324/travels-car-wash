@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('invoice_sequences', function (Blueprint $table) {
+            $table->id();
+            $table->string('prefix', 20)->default('INV');
+            $table->string('financial_year', 10)->default('');
+            $table->unsignedInteger('last_number')->default(0);
+            $table->timestamps();
+
+            $table->unique(['prefix', 'financial_year']);
+        });
+
+        Schema::create('receipt_sequences', function (Blueprint $table) {
+            $table->id();
+            $table->string('prefix', 20)->default('RCP');
+            $table->string('financial_year', 10)->default('');
+            $table->unsignedInteger('last_number')->default(0);
+            $table->timestamps();
+
+            $table->unique(['prefix', 'financial_year']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('receipt_sequences');
+        Schema::dropIfExists('invoice_sequences');
+    }
+};
