@@ -62,6 +62,7 @@ export default function TripsPage() {
     const [saving, setSaving] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<Trip | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [viewTarget, setViewTarget] = useState<Trip | null>(null);
 
     const fetchTrips = useCallback(async () => {
         setLoading(true);
@@ -227,6 +228,7 @@ export default function TripsPage() {
                             </Td>
                             <Td right>
                                 <div className="flex items-center justify-end gap-3">
+                                    <button onClick={() => setViewTarget(t)} className="text-xs font-medium text-gray-600 hover:text-gray-800">View</button>
                                     <button onClick={() => openEdit(t)} disabled={t.is_invoiced}
                                         className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-30 disabled:cursor-not-allowed">
                                         Edit
@@ -325,6 +327,42 @@ export default function TripsPage() {
                 confirmLabel="Delete" danger
                 onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} loading={deleting}
             />
+
+            {/* View Trip Modal */}
+            <Modal open={!!viewTarget} onClose={() => setViewTarget(null)} title={`Trip: ${viewTarget?.trip_number}`} size="lg">
+                {viewTarget && (
+                    <div className="space-y-3 text-sm">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div><span className="text-gray-500">Date:</span> <span className="font-medium ml-1">{formatDate(viewTarget.trip_date)}</span></div>
+                            <div><span className="text-gray-500">Type:</span> <span className="font-medium ml-1">{viewTarget.trip_type}</span></div>
+                            <div><span className="text-gray-500">Vehicle:</span> <span className="font-medium ml-1">{viewTarget.vehicle?.name ?? '—'}</span></div>
+                            <div><span className="text-gray-500">Driver:</span> <span className="font-medium ml-1">{viewTarget.driver_name ?? '—'}</span></div>
+                            <div><span className="text-gray-500">Customer:</span> <span className="font-medium ml-1">{viewTarget.customer?.name ?? viewTarget.customer?.company_name ?? 'Walk-in'}</span></div>
+                            <div><span className="text-gray-500">Status:</span> <span className="ml-1"><Badge color={tripStatusColor(viewTarget.status)}>{viewTarget.status}</Badge></span></div>
+                            {viewTarget.pickup_location && <div><span className="text-gray-500">Pickup:</span> <span className="font-medium ml-1">{viewTarget.pickup_location}</span></div>}
+                            {viewTarget.drop_location && <div><span className="text-gray-500">Drop:</span> <span className="font-medium ml-1">{viewTarget.drop_location}</span></div>}
+                            {viewTarget.start_odometer != null && <div><span className="text-gray-500">Start Odo:</span> <span className="font-medium ml-1">{viewTarget.start_odometer} km</span></div>}
+                            {viewTarget.end_odometer != null && <div><span className="text-gray-500">End Odo:</span> <span className="font-medium ml-1">{viewTarget.end_odometer} km</span></div>}
+                            {viewTarget.distance_km != null && <div><span className="text-gray-500">Distance:</span> <span className="font-medium ml-1">{viewTarget.distance_km} km</span></div>}
+                            <div><span className="text-gray-500">Payment:</span> <span className="ml-1"><Badge color={paymentStatusColor(viewTarget.payment_status)}>{viewTarget.payment_status}</Badge></span></div>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div><span className="text-gray-500">Fare:</span> <span className="font-medium ml-1">{formatCurrency(viewTarget.fare_amount)}</span></div>
+                            <div><span className="text-gray-500">Extra:</span> <span className="font-medium ml-1">{formatCurrency(viewTarget.additional_charges)}</span></div>
+                            <div><span className="text-gray-500">Discount:</span> <span className="font-medium ml-1">{formatCurrency(viewTarget.discount)}</span></div>
+                            <div><span className="text-gray-500">Tax:</span> <span className="font-medium ml-1">{formatCurrency(viewTarget.tax_amount)}</span></div>
+                            <div><span className="text-gray-500">Total:</span> <span className="font-bold text-blue-700 ml-1">{formatCurrency(viewTarget.total_amount)}</span></div>
+                            <div><span className="text-gray-500">Received:</span> <span className="font-medium text-green-700 ml-1">{formatCurrency(viewTarget.amount_received)}</span></div>
+                            <div><span className="text-gray-500">Balance:</span> <span className="font-bold text-red-600 ml-1">{formatCurrency(viewTarget.balance_due)}</span></div>
+                            {viewTarget.payment_mode && <div><span className="text-gray-500">Mode:</span> <span className="font-medium ml-1">{viewTarget.payment_mode}</span></div>}
+                        </div>
+                        {viewTarget.notes && <p className="text-gray-500 text-xs">Notes: {viewTarget.notes}</p>}
+                        <div className="flex justify-end pt-2">
+                            <Button onClick={() => setViewTarget(null)}>Close</Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }

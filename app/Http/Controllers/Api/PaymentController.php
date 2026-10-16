@@ -142,6 +142,25 @@ class PaymentController extends Controller
         return $pdf->download(str_replace('/', '-', $filename));
     }
 
+    public function receiptSignedUrl(Payment $payment)
+    {
+        $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'pdf.receipt', now()->addMinutes(5), ['payment' => $payment->id]
+        );
+        return response()->json(['url' => $url]);
+    }
+
+    public function receiptSigned(Payment $payment)
+    {
+        $payment->load(['customer', 'allocations.invoice']);
+        $profile = BusinessProfile::first();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.receipt', compact('payment', 'profile'));
+        $filename = 'Receipt-' . str_replace('/', '-', $payment->payment_number) . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
     private function applyAllocations(Payment $payment, array $allocations): void
     {
         $totalRequested = collect($allocations)->sum('amount');

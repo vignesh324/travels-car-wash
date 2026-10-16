@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/Card';
 import { useCustomers } from '../../hooks/useCustomers';
 import { formatCurrency, formatDate, paymentStatusColor, extractErrors } from '../../utils/format';
 import type { CarWashTransaction, CarWashService } from '../../types';
+import { usePdfDownload } from '../../hooks/usePdfDownload';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -45,6 +46,7 @@ function nowLocal() {
 
 export default function CarWashTransactionsTab() {
     const { customers } = useCustomers();
+    const { download, downloading } = usePdfDownload();
     const [services, setServices] = useState<CarWashService[]>([]);
     const [transactions, setTransactions] = useState<CarWashTransaction[]>([]);
     const [loading, setLoading] = useState(true);
@@ -71,6 +73,7 @@ export default function CarWashTransactionsTab() {
     const [saving, setSaving] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<CarWashTransaction | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [viewTarget, setViewTarget] = useState<CarWashTransaction | null>(null);
 
     useEffect(() => {
         carWashServicesApi.list().then(({ data }) => setServices(data)).catch(() => {});
@@ -267,7 +270,9 @@ export default function CarWashTransactionsTab() {
                                     <td className="px-4 py-3"><Badge color={paymentStatusColor(tx.payment_status)}>{tx.payment_status}</Badge></td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <button onClick={() => openEdit(tx)} className="text-blue-600 hover:text-blue-800 text-xs font-medium">Edit</button>
+                                            <button onClick={() => setViewTarget(tx)} className="text-gray-600 hover:text-gray-800 text-xs font-medium">View</button>
+                                            <button onClick={() => download(carWashApi.billPath(tx.uuid), `Bill-${tx.transaction_number}.pdf`)} disabled={downloading} className="text-blue-600 hover:text-blue-800 text-xs font-medium disabled:opacity-40">PDF</button>
+                                            <button onClick={() => openEdit(tx)} className="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Edit</button>
                                             <button onClick={() => setDeleteTarget(tx)} className="text-red-600 hover:text-red-800 text-xs font-medium">Delete</button>
                                         </div>
                                     </td>
@@ -374,6 +379,57 @@ export default function CarWashTransactionsTab() {
                 onCancel={() => setDeleteTarget(null)}
                 loading={deleting}
             />
+
+            {/* View Modal */}
+            <Modal open={!!viewTarget} onClose={() => setViewTarget(null)} title={`Bill: ${viewTarget?.transaction_number}`} size="lg">
+                {viewTarget && (
+                    <div className="space-y-3 text-sm">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div><span className="text-gray-500">Date:</span> <span className="font-medium">{formatDate(viewTarget.service_datetime)}</span></div>
+                            <div><span className="text-gray-500">Vehicle:</span> <span className="font-medium">{viewTarget.vehicle_registration ?? '—'}</span></div>
+                            <div><span className="text-gray-500">Customer:</span> <span className="font-medium">{viewTarget.customer?.name ?? viewTarget.customer?.company_name ?? 'Walk-in'}</span></div>
+                            <div><span className="text-gray-500">Payment Mode:</span> <span className="font-medium">{viewTarget.payment_mode ?? '—'}</span></div>
+                        </div>
+                        {viewTarget.items && viewTarget.items.length > 0 && (
+                            <table className="w-full text-xs border border-gray-200 rounded-lg overflow-hidden">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="text-left px-3 py-2">Service</th>
+                                        <th className="text-right px-3 py-2">Qty</th>
+                                        <th className="text-right px-3 py-2">Rate</th>
+                                        <th className="text-right px-3 py-2">GST%</th>
+                                        <th className="text-right px-3 py-2">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {viewTarget.items.map((item, i) => (
+                                        <tr key={i}>
+                                            <td className="px-3 py-2">{item.service_name}</td>
+                                            <td className="px-3 py-2 text-right">{item.quantity}</td>
+                                            <td className="px-3 py-2 text-right">{formatCurrency(item.unit_price)}</td>
+                                            <td className="px-3 py-2 text-right">{item.tax_rate}%</td>
+                                            <td className="px-3 py-2 text-right font-medium">{formatCurrency(item.total_amount)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                        <div className="bg-gray-50 rounded-lg p-3 grid grid-cols-2 gap-2">
+                            <div><span className="text-gray-500">Subtotal:</span> <span className="font-medium">{formatCurrency(viewTarget.subtotal)}</span></div>
+                            <div><span className="text-gray-500">Discount:</span> <span className="font-medium">{formatCurrency(viewTarget.discount)}</span></div>
+                            <div><span className="text-gray-500">Tax:</span> <span className="font-medium">{formatCurrency(viewTarget.tax_amount)}</span></div>
+                            <div><span className="text-gray-500">Total:</span> <span className="font-bold text-blue-700">{formatCurrency(viewTarget.total_amount)}</span></div>
+                            <div><span className="text-gray-500">Paid:</span> <span className="font-medium text-green-700">{formatCurrency(viewTarget.amount_paid)}</span></div>
+                            <div><span className="text-gray-500">Balance:</span> <span className="font-bold text-red-600">{formatCurrency(viewTarget.balance_due)}</span></div>
+                        </div>
+                        {viewTarget.notes && <p className="text-gray-500 text-xs">Notes: {viewTarget.notes}</p>}
+                        <div className="flex justify-end gap-3 pt-2">
+                            <Button variant="secondary" onClick={() => download(carWashApi.billPath(viewTarget.uuid), `Bill-${viewTarget.transaction_number}.pdf`)} loading={downloading}>Download PDF</Button>
+                            <Button onClick={() => setViewTarget(null)}>Close</Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }

@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/Card';
 import { useCustomers } from '../../hooks/useCustomers';
 import { formatCurrency, formatDate, extractErrors, today } from '../../utils/format';
 import type { Invoice, Payment } from '../../types';
+import { usePdfDownload } from '../../hooks/usePdfDownload';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -22,6 +23,7 @@ function statusColor(s: string): 'green' | 'red' | 'gray' {
 
 export default function PaymentsPage() {
     const { customers } = useCustomers();
+    const { download, downloading } = usePdfDownload();
     const [payments, setPayments] = useState<Payment[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -51,6 +53,7 @@ export default function PaymentsPage() {
     const [reverseTarget, setReverseTarget] = useState<Payment | null>(null);
     const [reverseReason, setReverseReason] = useState('');
     const [reversing, setReversing] = useState(false);
+    const [viewTarget, setViewTarget] = useState<Payment | null>(null);
 
     const fetchPayments = useCallback(async () => {
         setLoading(true);
@@ -227,7 +230,8 @@ export default function PaymentsPage() {
                                     <td className="px-4 py-3"><Badge color={statusColor(p.status)}>{p.status}</Badge></td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <a href={paymentsApi.receiptUrl(p.uuid)} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-xs font-medium">Receipt</a>
+                                            <button onClick={() => setViewTarget(p)} className="text-gray-600 hover:text-gray-800 text-xs font-medium">View</button>
+                                            <button onClick={() => download(paymentsApi.receiptPath(p.uuid), `Receipt-${p.payment_number}.pdf`)} disabled={downloading} className="text-blue-600 hover:text-blue-800 text-xs font-medium disabled:opacity-40">Receipt</button>
                                             {p.status === 'active' && (
                                                 <button onClick={() => { setReverseTarget(p); setReverseReason(''); }} className="text-red-600 hover:text-red-800 text-xs font-medium">Reverse</button>
                                             )}
@@ -317,6 +321,44 @@ export default function PaymentsPage() {
                     <Button variant="secondary" onClick={() => setReverseTarget(null)}>Back</Button>
                     <Button variant="danger" onClick={handleReverse} loading={reversing} disabled={!reverseReason.trim()}>Reverse Payment</Button>
                 </div>
+            </Modal>
+
+            {/* View Payment Modal */}
+            <Modal open={!!viewTarget} onClose={() => setViewTarget(null)} title={`Payment: ${viewTarget?.payment_number}`} size="md">
+                {viewTarget && (
+                    <div className="space-y-3 text-sm">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div><span className="text-gray-500">Date:</span> <span className="font-medium ml-1">{formatDate(viewTarget.payment_date)}</span></div>
+                            <div><span className="text-gray-500">Method:</span> <span className="font-medium ml-1">{viewTarget.payment_method}</span></div>
+                            <div><span className="text-gray-500">Customer:</span> <span className="font-medium ml-1">{viewTarget.customer?.company_name ?? viewTarget.customer?.name ?? '—'}</span></div>
+                            <div><span className="text-gray-500">Status:</span> <span className="ml-1"><Badge color={statusColor(viewTarget.status)}>{viewTarget.status}</Badge></span></div>
+                            {viewTarget.transaction_reference && <div className="col-span-2"><span className="text-gray-500">Reference:</span> <span className="font-medium ml-1">{viewTarget.transaction_reference}</span></div>}
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3 grid grid-cols-3 gap-2">
+                            <div><span className="text-gray-500">Amount:</span> <span className="font-bold text-blue-700 ml-1">{formatCurrency(viewTarget.amount)}</span></div>
+                            <div><span className="text-gray-500">Allocated:</span> <span className="font-medium text-green-700 ml-1">{formatCurrency(viewTarget.allocated_amount)}</span></div>
+                            <div><span className="text-gray-500">Advance:</span> <span className="font-medium text-amber-600 ml-1">{formatCurrency(viewTarget.unallocated_amount)}</span></div>
+                        </div>
+                        {viewTarget.allocations && viewTarget.allocations.length > 0 && (
+                            <div>
+                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Applied Against</p>
+                                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+                                    {viewTarget.allocations.map(a => (
+                                        <div key={a.id} className="flex justify-between px-3 py-2 text-xs">
+                                            <span className="font-mono text-blue-700">{a.invoice?.invoice_number ?? 'Invoice'}</span>
+                                            <span className="font-medium">{formatCurrency(a.amount)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {viewTarget.notes && <p className="text-gray-500 text-xs">Notes: {viewTarget.notes}</p>}
+                        <div className="flex justify-end gap-3 pt-2">
+                            <Button variant="secondary" onClick={() => download(paymentsApi.receiptPath(viewTarget.uuid), `Receipt-${viewTarget.payment_number}.pdf`)} loading={downloading}>Download Receipt</Button>
+                            <Button onClick={() => setViewTarget(null)}>Close</Button>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );

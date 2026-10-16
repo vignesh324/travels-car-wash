@@ -1,6 +1,5 @@
 import api from './client';
 import type { Invoice, Payment } from '../types';
-import { appPath } from '../utils/appBasePath';
 
 export const invoicesApi = {
     datatable: (params: Record<string, unknown>) =>
@@ -10,7 +9,7 @@ export const invoicesApi = {
     update: (uuid: string, data: Record<string, unknown>) => api.put<Invoice>(`/invoices/${uuid}`, data),
     cancel: (uuid: string, reason: string) =>
         api.post(`/invoices/${uuid}/cancel`, { reason }),
-    pdfUrl: (uuid: string) => appPath(`/api/invoices/${uuid}/pdf`),
+    pdfPath: (uuid: string) => `/invoices/${uuid}/pdf`,
 };
 
 export const paymentsApi = {
@@ -22,7 +21,7 @@ export const paymentsApi = {
         api.post(`/payments/${uuid}/allocate`, { allocations }),
     reverse: (uuid: string, reason: string) =>
         api.post(`/payments/${uuid}/reverse`, { reason }),
-    receiptUrl: (uuid: string) => appPath(`/api/payments/${uuid}/receipt`),
+    receiptPath: (uuid: string) => `/payments/${uuid}/receipt`,
 };
 
 // Customers with outstanding invoices (for payment allocation)

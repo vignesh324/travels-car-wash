@@ -17,4 +17,5 @@ export const carWashApi = {
     update: (uuid: string, data: Record<string, unknown>) =>
         api.put<CarWashTransaction>(`/car-wash/transactions/${uuid}`, data),
     delete: (uuid: string) => api.delete(`/car-wash/transactions/${uuid}`),
+    billPath: (uuid: string) => `/car-wash/transactions/${uuid}/pdf`,
 };

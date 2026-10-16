@@ -227,4 +227,23 @@ class InvoiceController extends Controller
 
         return $pdf->download(str_replace('/', '-', $filename));
     }
+
+    public function pdfSignedUrl(Invoice $invoice)
+    {
+        $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'pdf.invoice', now()->addMinutes(5), ['invoice' => $invoice->id]
+        );
+        return response()->json(['url' => $url]);
+    }
+
+    public function pdfSigned(Invoice $invoice)
+    {
+        $invoice->load(['customer', 'items', 'allocations.payment']);
+        $profile = BusinessProfile::first();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', compact('invoice', 'profile'));
+        $filename = 'Invoice-' . str_replace('/', '-', $invoice->invoice_number) . '.pdf';
+
+        return $pdf->download($filename);
+    }
 }

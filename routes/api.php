@@ -75,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('invoices/{invoice}', [InvoiceController::class, 'update']);
     Route::post('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel']);
     Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf']);
+    Route::get('invoices/{invoice}/pdf-url', [InvoiceController::class, 'pdfSignedUrl']);
 
     Route::get('payments', [PaymentController::class, 'index']);
     Route::post('payments', [PaymentController::class, 'store']);
@@ -82,6 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('payments/{payment}/allocate', [PaymentController::class, 'allocate']);
     Route::post('payments/{payment}/reverse', [PaymentController::class, 'reverse']);
     Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt']);
+    Route::get('payments/{payment}/receipt-url', [PaymentController::class, 'receiptSignedUrl']);
 
     Route::get('car-wash/services', [CarWashController::class, 'services']);
     Route::post('car-wash/services', [CarWashController::class, 'storeService']);
@@ -91,6 +93,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('car-wash/transactions/{carWashTransaction}', [CarWashController::class, 'show']);
     Route::put('car-wash/transactions/{carWashTransaction}', [CarWashController::class, 'update']);
     Route::delete('car-wash/transactions/{carWashTransaction}', [CarWashController::class, 'destroy']);
+    Route::get('car-wash/transactions/{carWashTransaction}/pdf', [CarWashController::class, 'pdf']);
+    Route::get('car-wash/transactions/{carWashTransaction}/pdf-url', [CarWashController::class, 'pdfSignedUrl']);
 
     Route::get('reports/revenue', [ReportsController::class, 'revenue']);
     Route::get('reports/expenses', [ReportsController::class, 'expenses']);

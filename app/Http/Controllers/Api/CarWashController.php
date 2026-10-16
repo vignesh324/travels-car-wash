@@ -176,6 +176,32 @@ class CarWashController extends Controller
         return response()->json(['message' => 'Transaction deleted']);
     }
 
+    public function pdf(CarWashTransaction $carWashTransaction)
+    {
+        $carWashTransaction->load(['customer', 'items']);
+        $profile = \App\Models\BusinessProfile::first();
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.carwash', compact('carWashTransaction', 'profile'));
+        $filename = 'Bill-' . str_replace('/', '-', $carWashTransaction->transaction_number) . '.pdf';
+        return $pdf->download($filename);
+    }
+
+    public function pdfSignedUrl(CarWashTransaction $carWashTransaction)
+    {
+        $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'pdf.carwash', now()->addMinutes(5), ['carWashTransaction' => $carWashTransaction->id]
+        );
+        return response()->json(['url' => $url]);
+    }
+
+    public function pdfSigned(CarWashTransaction $carWashTransaction)
+    {
+        $carWashTransaction->load(['customer', 'items']);
+        $profile = \App\Models\BusinessProfile::first();
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.carwash', compact('carWashTransaction', 'profile'));
+        $filename = 'Bill-' . str_replace('/', '-', $carWashTransaction->transaction_number) . '.pdf';
+        return $pdf->download($filename);
+    }
+
     private function nextNumber(): string
     {
         $seq = DB::table('invoice_sequences')

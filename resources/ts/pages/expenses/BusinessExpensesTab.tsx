@@ -28,7 +28,8 @@ const emptyForm = {
 type FormData = typeof emptyForm;
 
 export default function BusinessExpensesTab() {
-    const { categories } = useExpenseCategories('general');
+    const { categories: generalCats } = useExpenseCategories('general');
+    const { categories: carwashCats } = useExpenseCategories('carwash');
 
     const [expenses, setExpenses] = useState<BusinessExpense[]>([]);
     const [loading, setLoading] = useState(true);
@@ -48,6 +49,8 @@ export default function BusinessExpensesTab() {
     const [saving, setSaving] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<BusinessExpense | null>(null);
     const [deleting, setDeleting] = useState(false);
+
+    const categories = form.source === 'carwash' ? carwashCats : generalCats;
 
     const fetchExpenses = useCallback(async () => {
         setLoading(true);
