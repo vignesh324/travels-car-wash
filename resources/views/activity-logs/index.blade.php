@@ -8,13 +8,17 @@
     <p class="resource-intro text-muted small mb-0">Review changes and actions recorded across your workspace.</p>
 </header>
 <section class="card resource-filter-card mb-3" aria-label="Activity log filters" >
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
-            <div class="col-sm-6 col-lg-2"><label class="form-label" for="log-name">Log type</label><input class="form-control" id="log-name" data-ajax-table="activity-logs-dt" placeholder="e.g. default" /></div>
-            <div class="col-sm-6 col-lg-2"><label class="form-label" for="log-user">User ID</label><input class="form-control" type="number" min="1" id="log-user" data-ajax-table="activity-logs-dt" placeholder="Any user" /></div>
-            <div class="col-sm-6 col-lg-2"><label class="form-label" for="log-subject">Record type</label><input class="form-control" id="log-subject" data-ajax-table="activity-logs-dt" placeholder="e.g. Trip" /></div>
-            <div class="col-6 col-lg-2"><label class="form-label" for="log-date-from">From</label><input class="form-control" type="date" id="log-date-from" data-ajax-table="activity-logs-dt" /></div>
-            <div class="col-6 col-lg-2"><label class="form-label" for="log-date-to">To</label><input class="form-control" type="date" id="log-date-to" data-ajax-table="activity-logs-dt" /></div>
+    <div class="card-body">
+        <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-sliders2" aria-hidden="true"></i>
+            <h2 class="small fw-semibold mb-0">Activity filters</h2>
+        </div>
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-sm-6 col-lg-2"><label class="form-label" for="log-name">Log type</label><input class="form-control" id="log-name" data-ajax-table="activity-logs-dt" placeholder="e.g. default" /></div>
+            <div class="col-12 col-sm-6 col-lg-2"><label class="form-label" for="log-user">User ID</label><input class="form-control" type="number" min="1" id="log-user" data-ajax-table="activity-logs-dt" placeholder="Any user" /></div>
+            <div class="col-12 col-sm-6 col-lg-2"><label class="form-label" for="log-subject">Record type</label><input class="form-control" id="log-subject" data-ajax-table="activity-logs-dt" placeholder="e.g. Trip" /></div>
+            <div class="col-12 col-sm-6 col-lg-2"><label class="form-label" for="log-date-from">From</label><input class="form-control" type="date" id="log-date-from" data-ajax-table="activity-logs-dt" /></div>
+            <div class="col-12 col-sm-6 col-lg-2"><label class="form-label" for="log-date-to">To</label><input class="form-control" type="date" id="log-date-to" data-ajax-table="activity-logs-dt" /></div>
             <div class="col-12 col-lg-2"><button class="btn btn-outline-secondary btn-sm w-100" type="button" onclick="resetLogFilters()"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset filters</button></div>
         </div>
     </div>

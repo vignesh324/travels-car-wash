@@ -85,8 +85,12 @@
         </div>
         <div class="card resource-filter-card mb-3">
             <div class="card-body">
-                <div class="row g-2 g-lg-3 align-items-end">
-                    <div class="col-sm-6 col-lg-3">
+                <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+                    <i class="bi bi-sliders2" aria-hidden="true"></i>
+                    <h3 class="small fw-semibold mb-0">Transaction filters</h3>
+                </div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-sm-6 col-lg-3">
                         <label for="wash-customer-filter" class="form-label">Customer</label>
                         <select id="wash-customer-filter" class="form-select" data-ajax-table="car-wash-transactions-dt">
                             <option value="">All customers</option>
@@ -95,7 +99,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-sm-6 col-lg-2">
+                    <div class="col-12 col-sm-6 col-lg-2">
                         <label for="wash-status-filter" class="form-label">Payment status</label>
                         <select id="wash-status-filter" class="form-select" data-ajax-table="car-wash-transactions-dt">
                             <option value="">All statuses</option>
@@ -104,11 +108,11 @@
                             <option value="unpaid">Unpaid</option>
                         </select>
                     </div>
-                    <div class="col-6 col-lg-2">
+                    <div class="col-12 col-sm-6 col-lg-2">
                         <label for="wash-date-from" class="form-label">From</label>
                         <input class="form-control" type="date" id="wash-date-from" data-ajax-table="car-wash-transactions-dt" />
                     </div>
-                    <div class="col-6 col-lg-2">
+                    <div class="col-12 col-sm-6 col-lg-2">
                         <label for="wash-date-to" class="form-label">To</label>
                         <input class="form-control" type="date" id="wash-date-to" data-ajax-table="car-wash-transactions-dt" />
                     </div>

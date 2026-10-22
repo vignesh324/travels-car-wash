@@ -17,8 +17,12 @@
 </ul>
 
 <section class="card resource-filter-card mb-3" aria-label="Expense filters" >
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
+    <div class="card-body">
+        <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-sliders2" aria-hidden="true"></i>
+            <h2 class="small fw-semibold mb-0">Expense filters</h2>
+        </div>
+        <div class="row g-3 align-items-end">
             <div class="col-12 col-sm-6 col-lg-3" id="expense-vehicle-filter-wrap">
                 <label class="form-label" for="expense-vehicle-filter">Vehicle</label>
                 <select class="form-select" id="expense-vehicle-filter" data-ajax-table="expenses-dt">
@@ -45,11 +49,11 @@
                     <option value="">All statuses</option><option value="paid">Paid</option><option value="partial">Partial</option><option value="unpaid">Unpaid</option>
                 </select>
             </div>
-            <div class="col-6 col-lg-1">
+            <div class="col-12 col-sm-6 col-lg-2">
                 <label class="form-label" for="expense-date-from">From</label>
                 <input class="form-control" type="date" id="expense-date-from" data-ajax-table="expenses-dt" />
             </div>
-            <div class="col-6 col-lg-1">
+            <div class="col-12 col-sm-6 col-lg-2">
                 <label class="form-label" for="expense-date-to">To</label>
                 <input class="form-control" type="date" id="expense-date-to" data-ajax-table="expenses-dt" />
             </div>

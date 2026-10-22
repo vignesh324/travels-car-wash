@@ -11,29 +11,52 @@
     <x-action-button action="invoices.add" label="Create Invoice" size="" class="resource-primary-action px-4 py-2 fw-semibold rounded-2" />
   </header>
 
-  <div class="card resource-filter-card p-3 mb-4 d-flex flex-wrap gap-2">
-    <select id="inv-filter-customer" data-ajax-table="invoices-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-select" aria-label="Inv Filter Customer" >
-      <option value="">All Customers</option>
-      @foreach($customers as $customer)
-        <option value="{{ $customer->id }}">{{ $customer->displayName() }}</option>
-      @endforeach
-    </select>
-    <select id="inv-filter-status" data-ajax-table="invoices-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-select" aria-label="Inv Filter Status" >
-      <option value="">All Status</option>
-      <option value="issued">Issued</option>
-      <option value="partial">Partial</option>
-      <option value="paid">Paid</option>
-      <option value="cancelled">Cancelled</option>
-    </select>
-    <select id="inv-filter-source" data-ajax-table="invoices-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-select" aria-label="Inv Filter Source" >
-      <option value="">All Sources</option>
-      <option value="travels">Travels</option>
-      <option value="carwash">Car Wash</option>
-      <option value="mixed">Mixed</option>
-    </select>
-    <input type="date" id="inv-date-from" data-ajax-table="invoices-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-control" aria-label="Inv Date From" />
-    <input type="date" id="inv-date-to" data-ajax-table="invoices-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-control" aria-label="Inv Date To" />
-  </div>
+  <section class="card resource-filter-card mb-4" aria-labelledby="invoice-filter-title">
+    <div class="card-body">
+      <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+        <i class="bi bi-sliders2" aria-hidden="true"></i>
+        <h3 id="invoice-filter-title" class="small fw-semibold mb-0">Invoice filters</h3>
+      </div>
+      <div class="row g-3">
+        <div class="col-12 col-sm-6 col-xl-3">
+          <label for="inv-filter-customer" class="form-label">Customer</label>
+          <select id="inv-filter-customer" data-ajax-table="invoices-dt" class="form-select">
+            <option value="">All customers</option>
+            @foreach($customers as $customer)
+              <option value="{{ $customer->id }}">{{ $customer->displayName() }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+          <label for="inv-filter-status" class="form-label">Status</label>
+          <select id="inv-filter-status" data-ajax-table="invoices-dt" class="form-select">
+            <option value="">All statuses</option>
+            <option value="issued">Issued</option>
+            <option value="partial">Partial</option>
+            <option value="paid">Paid</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+          <label for="inv-filter-source" class="form-label">Source</label>
+          <select id="inv-filter-source" data-ajax-table="invoices-dt" class="form-select">
+            <option value="">All sources</option>
+            <option value="travels">Travels</option>
+            <option value="carwash">Car Wash</option>
+            <option value="mixed">Mixed</option>
+          </select>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+          <label for="inv-date-from" class="form-label">From</label>
+          <input type="date" id="inv-date-from" data-ajax-table="invoices-dt" class="form-control" />
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+          <label for="inv-date-to" class="form-label">To</label>
+          <input type="date" id="inv-date-to" data-ajax-table="invoices-dt" class="form-control" />
+        </div>
+      </div>
+    </div>
+  </section>
 
   <div class="card resource-table-card overflow-hidden">
     <div class="table-responsive resource-table-scroll p-2">

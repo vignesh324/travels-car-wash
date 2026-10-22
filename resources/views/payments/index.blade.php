@@ -11,25 +11,48 @@
     <x-action-button action="payments.add" label="Record Payment" size="" class="resource-primary-action px-4 py-2 fw-semibold rounded-2" />
   </header>
 
-  <div class="card resource-filter-card p-3 mb-4 d-flex flex-wrap gap-2">
-    <select id="pmt-filter-customer" data-ajax-table="payments-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-select" aria-label="Pmt Filter Customer" >
-      <option value="">All Customers</option>
-      @foreach($customers as $customer)
-        <option value="{{ $customer->id }}">{{ $customer->displayName() }}</option>
-      @endforeach
-    </select>
-    <select id="pmt-filter-method" data-ajax-table="payments-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-select" aria-label="Pmt Filter Method" >
-      <option value="">All Methods</option>
-      <option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Card</option><option>Other</option>
-    </select>
-    <select id="pmt-filter-status" data-ajax-table="payments-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-select" aria-label="Pmt Filter Status" >
-      <option value="">All Status</option>
-      <option value="active">Active</option>
-      <option value="reversed">Reversed</option>
-    </select>
-    <input type="date" id="pmt-date-from" data-ajax-table="payments-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-control" aria-label="Pmt Date From" />
-    <input type="date" id="pmt-date-to" data-ajax-table="payments-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-control" aria-label="Pmt Date To" />
-  </div>
+  <section class="card resource-filter-card mb-4" aria-labelledby="payment-filter-title">
+    <div class="card-body">
+      <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+        <i class="bi bi-sliders2" aria-hidden="true"></i>
+        <h3 id="payment-filter-title" class="small fw-semibold mb-0">Payment filters</h3>
+      </div>
+      <div class="row g-3">
+        <div class="col-12 col-sm-6 col-xl-3">
+          <label for="pmt-filter-customer" class="form-label">Customer</label>
+          <select id="pmt-filter-customer" data-ajax-table="payments-dt" class="form-select">
+            <option value="">All customers</option>
+            @foreach($customers as $customer)
+              <option value="{{ $customer->id }}">{{ $customer->displayName() }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+          <label for="pmt-filter-method" class="form-label">Payment method</label>
+          <select id="pmt-filter-method" data-ajax-table="payments-dt" class="form-select">
+            <option value="">All methods</option>
+            <option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Card</option><option>Other</option>
+          </select>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+          <label for="pmt-filter-status" class="form-label">Status</label>
+          <select id="pmt-filter-status" data-ajax-table="payments-dt" class="form-select">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="reversed">Reversed</option>
+          </select>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+          <label for="pmt-date-from" class="form-label">From</label>
+          <input type="date" id="pmt-date-from" data-ajax-table="payments-dt" class="form-control" />
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+          <label for="pmt-date-to" class="form-label">To</label>
+          <input type="date" id="pmt-date-to" data-ajax-table="payments-dt" class="form-control" />
+        </div>
+      </div>
+    </div>
+  </section>
 
   <div class="card resource-table-card overflow-hidden">
     <div class="table-responsive resource-table-scroll p-2" tabindex="0" aria-label="Payments table. Scroll horizontally to reach row actions.">

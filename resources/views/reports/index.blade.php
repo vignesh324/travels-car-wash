@@ -2,15 +2,19 @@
 @section('title', 'Reports')
 @section('content')
 <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
-    <div><h2 class="h4 fw-bold mb-1">Reports</h2><p class="text-muted small mb-0">Review activity and financial performance for a selected period.</p></div>
+    <div><p class="resource-kicker mb-2">Workspace insights</p><h2 class="resource-heading fw-bold mb-1">Reports</h2><p class="resource-intro small mb-0">Review activity and financial performance for a selected period.</p></div>
 </div>
 
-<section class="card border-0 shadow-sm mb-3" aria-label="Report filters" >
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
-            <div class="col-6 col-md-3"><label class="form-label" for="report-date-from">From</label><input class="form-control" type="date" id="report-date-from" /></div>
-            <div class="col-6 col-md-3"><label class="form-label" for="report-date-to">To</label><input class="form-control" type="date" id="report-date-to" /></div>
-            <div class="col-12 col-md-auto"><button class="btn btn-primary btn-sm" type="button" onclick="reportPage=1;updateReportExport();loadReport()"><i class="bi bi-funnel me-1"></i>Apply filters</button></div>
+<section class="card resource-filter-card mb-3" aria-labelledby="report-filter-title">
+    <div class="card-body">
+        <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-sliders2" aria-hidden="true"></i>
+            <h2 id="report-filter-title" class="small fw-semibold mb-0">Report filters</h2>
+        </div>
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-sm-6 col-md-3"><label class="form-label" for="report-date-from">From</label><input class="form-control" type="date" id="report-date-from" /></div>
+            <div class="col-12 col-sm-6 col-md-3"><label class="form-label" for="report-date-to">To</label><input class="form-control" type="date" id="report-date-to" /></div>
+            <div class="col-12 col-md-auto"><button class="btn btn-primary" type="button" onclick="reportPage=1;updateReportExport();loadReport()"><i class="bi bi-funnel me-1"></i>Apply filters</button></div>
         </div>
     </div>
 </section>

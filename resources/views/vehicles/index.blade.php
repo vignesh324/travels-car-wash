@@ -3,16 +3,6 @@
 
 @push('head')
 <style>
-    .vehicle-page .vehicle-search-wrap { position: relative; }
-    .vehicle-page .vehicle-search-wrap > .bi {
-        position: absolute;
-        top: 50%;
-        left: .85rem;
-        color: var(--app-muted);
-        transform: translateY(-50%);
-        pointer-events: none;
-    }
-    .vehicle-page #veh-search { padding-left: 2.35rem; }
     .vehicle-page .vehicle-count {
         color: var(--app-muted);
         font-size: .82rem;
@@ -64,35 +54,27 @@
     </header>
 
     <section class="resource-filter-card card mb-4" aria-labelledby="vehicle-filter-title">
-        <div class="card-body p-3 p-lg-4">
-            <div class="d-flex align-items-center gap-2 mb-3">
+        <div class="card-body">
+            <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
                 <i class="bi bi-sliders2 text-primary" aria-hidden="true"></i>
-                <h3 id="vehicle-filter-title" class="small fw-semibold mb-0">Find a vehicle</h3>
-                <span class="small text-secondary ms-1 d-none d-sm-inline">Filter the register by details or status</span>
+                <h3 id="vehicle-filter-title" class="small fw-semibold mb-0">Vehicle filters</h3>
             </div>
             <div class="row g-3">
-                <div class="col-12 col-md-6">
-                    <label for="veh-search" class="form-label resource-filter-label">Search vehicles</label>
-                    <div class="vehicle-search-wrap">
-                        <i class="bi bi-search" aria-hidden="true"></i>
-                        <input type="search" id="veh-search" data-ajax-table="vehicles-dt" placeholder="Registration, name or driver" class="form-control" />
-                    </div>
-                </div>
-                <div class="col-12 col-sm-4 col-md-2">
+                <div class="col-12 col-sm-6 col-lg-4">
                     <label for="veh-type" class="form-label resource-filter-label">Vehicle type</label>
                     <select id="veh-type" data-ajax-table="vehicles-dt" class="form-select">
                         <option value="">All types</option>
                         <option>Car</option><option>Van</option><option>Bus</option><option>Tempo</option><option>SUV</option><option>Other</option>
                     </select>
                 </div>
-                <div class="col-12 col-sm-4 col-md-2">
+                <div class="col-12 col-sm-6 col-lg-4">
                     <label for="veh-fuel" class="form-label resource-filter-label">Fuel type</label>
                     <select id="veh-fuel" data-ajax-table="vehicles-dt" class="form-select">
                         <option value="">All fuels</option>
                         <option>Petrol</option><option>Diesel</option><option>CNG</option><option>Electric</option><option>Other</option>
                     </select>
                 </div>
-                <div class="col-12 col-sm-4 col-md-2">
+                <div class="col-12 col-sm-6 col-lg-4">
                     <label for="veh-active" class="form-label resource-filter-label">Status</label>
                     <select id="veh-active" data-ajax-table="vehicles-dt" class="form-select">
                         <option value="">All statuses</option>
@@ -160,7 +142,6 @@ function initVehiclesTable() {
       { data: 'actions', orderable: false, searchable: false, className: 'text-end' },
     ], function() {
       return {
-        'search[value]': document.getElementById('veh-search').value,
         type:      document.getElementById('veh-type').value,
         fuel_type: document.getElementById('veh-fuel').value,
         is_active: document.getElementById('veh-active').value,
@@ -170,7 +151,7 @@ function initVehiclesTable() {
       order: [[1, 'asc']],
       layout: {
         topStart: 'pageLength',
-        topEnd: null,
+        topEnd: 'search',
         bottomStart: 'info',
         bottomEnd: 'paging',
       },

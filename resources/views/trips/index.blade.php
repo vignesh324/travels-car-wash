@@ -13,53 +13,52 @@
 
   <section class="card resource-filter-card mb-3" aria-labelledby="trip-filters-heading">
     <div class="card-body">
-      <h3 class="visually-hidden" id="trip-filters-heading">Filter trips</h3>
-      <div class="row g-2 align-items-end">
-        <div class="col-12 col-md-6 col-xl-3">
-          <label for="trip-search" class="form-label">Search trips</label>
-          <input type="text" id="trip-search" data-ajax-table="trips-dt" placeholder="Trip number or location" class="form-control form-control-sm" />
-        </div>
-        <div class="col-6 col-md-3 col-xl-3">
+      <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+        <i class="bi bi-sliders2" aria-hidden="true"></i>
+        <h3 class="small fw-semibold mb-0" id="trip-filters-heading">Trip filters</h3>
+      </div>
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-sm-6 col-xl-3">
           <label for="trip-filter-vehicle" class="form-label">Vehicle</label>
-          <select id="trip-filter-vehicle" data-ajax-table="trips-dt" class="form-select form-select-sm">
+          <select id="trip-filter-vehicle" data-ajax-table="trips-dt" class="form-select">
             <option value="">All Vehicles</option>
             @foreach($vehicles as $vehicle)
               <option value="{{ $vehicle->id }}">{{ $vehicle->name }} ({{ $vehicle->registration_number }})</option>
             @endforeach
           </select>
         </div>
-        <div class="col-6 col-md-3 col-xl-2">
+        <div class="col-12 col-sm-6 col-xl-2">
           <label for="trip-filter-type" class="form-label">Trip type</label>
-          <select id="trip-filter-type" data-ajax-table="trips-dt" class="form-select form-select-sm">
+          <select id="trip-filter-type" data-ajax-table="trips-dt" class="form-select">
             <option value="">All Types</option>
             <option>Local</option><option>Outstation</option><option>Airport Transfer</option><option>Corporate</option><option>Other</option>
           </select>
         </div>
-        <div class="col-6 col-md-3 col-xl-2">
+        <div class="col-12 col-sm-6 col-xl-2">
           <label for="trip-filter-status" class="form-label">Status</label>
-          <select id="trip-filter-status" data-ajax-table="trips-dt" class="form-select form-select-sm">
+          <select id="trip-filter-status" data-ajax-table="trips-dt" class="form-select">
             <option value="">All Status</option>
             <option value="draft">Draft</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
-        <div class="col-6 col-md-3 col-xl-2">
+        <div class="col-12 col-sm-6 col-xl-2">
           <label for="trip-filter-payment" class="form-label">Payment</label>
-          <select id="trip-filter-payment" data-ajax-table="trips-dt" class="form-select form-select-sm">
+          <select id="trip-filter-payment" data-ajax-table="trips-dt" class="form-select">
             <option value="">All Payments</option>
             <option value="unpaid">Unpaid</option>
             <option value="partial">Partial</option>
             <option value="paid">Paid</option>
           </select>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-12 col-sm-6 col-md-3">
           <label for="trip-date-from" class="form-label">Date from</label>
-          <input type="date" id="trip-date-from" data-ajax-table="trips-dt" class="form-control form-control-sm" />
+          <input type="date" id="trip-date-from" data-ajax-table="trips-dt" class="form-control" />
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-12 col-sm-6 col-md-3">
           <label for="trip-date-to" class="form-label">Date to</label>
-          <input type="date" id="trip-date-to" data-ajax-table="trips-dt" class="form-control form-control-sm" />
+          <input type="date" id="trip-date-to" data-ajax-table="trips-dt" class="form-control" />
         </div>
       </div>
     </div>
@@ -136,7 +135,6 @@ function initTripsTable() {
       { data: 'actions', orderable: false, searchable: false, className: 'text-end' },
     ], function() {
       return {
-        'search[value]': document.getElementById('trip-search').value,
         vehicle_id:     document.getElementById('trip-filter-vehicle').value,
         trip_type:      document.getElementById('trip-filter-type').value,
         status:         document.getElementById('trip-filter-status').value,

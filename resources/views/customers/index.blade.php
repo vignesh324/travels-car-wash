@@ -11,15 +11,25 @@
     <x-action-button action="customers.add" label="Add Customer" size="" class="resource-primary-action px-4 py-2 fw-semibold rounded-2" />
   </header>
 
-  <div class="card card-body resource-filter-card mb-3 d-flex flex-wrap gap-3">
-    <input type="text" id="cust-search" data-ajax-table="customers-dt" placeholder="Search name, phone, company..." class="flex-grow-1 rounded-2 border border-secondary-subtle px-3 py-2 small form-control" aria-label="Cust Search" />
-    <select id="cust-type" data-ajax-table="customers-dt" class="rounded-2 border border-secondary-subtle px-3 py-2 small form-select" aria-label="Cust Type" >
-      <option value="">All Types</option>
-      <option value="individual">Individual</option>
-      <option value="corporate">Corporate</option>
-      <option value="walkin">Walk-in</option>
-    </select>
-  </div>
+  <section class="card resource-filter-card mb-3" aria-labelledby="customer-filter-title">
+    <div class="card-body">
+      <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+        <i class="bi bi-sliders2" aria-hidden="true"></i>
+        <h3 id="customer-filter-title" class="small fw-semibold mb-0">Customer filters</h3>
+      </div>
+      <div class="row g-3">
+        <div class="col-12 col-sm-6 col-lg-4">
+          <label for="cust-type" class="form-label">Customer type</label>
+          <select id="cust-type" data-ajax-table="customers-dt" class="form-select">
+            <option value="">All types</option>
+            <option value="individual">Individual</option>
+            <option value="corporate">Corporate</option>
+            <option value="walkin">Walk-in</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <div class="card resource-table-card overflow-hidden">
     <div class="table-responsive resource-table-scroll p-2">
@@ -84,7 +94,6 @@ function initCustomersTable() {
       { data: 'actions', orderable: false, searchable: false, className: 'text-end' },
     ], function() {
       return {
-        'search[value]': document.getElementById('cust-search').value,
         type: document.getElementById('cust-type').value,
       };
     },

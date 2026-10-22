@@ -312,6 +312,7 @@ window.initDataTable = function(tableId, ajaxUrl, columns, extraParams, options)
     return $('#' + tableId).DataTable(Object.assign({
         serverSide: true,
         processing: true,
+        searching: true,
         ajax: window.dtAjax(ajaxUrl, extraParams),
         columns,
         order: [[0, 'desc']],
