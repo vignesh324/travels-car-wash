@@ -6,6 +6,7 @@ use App\Traits\HasAuditFields;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Collection;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
@@ -22,6 +23,19 @@ class CarWashService extends Model
         'tax_rate' => 'decimal:2',
         'is_active' => 'boolean',
     ];
+
+    public static function dropdownOptions(array $includeIds = []): Collection
+    {
+        return static::query()
+            ->where(function ($query) use ($includeIds) {
+                $query->where('is_active', true);
+                if ($includeIds) {
+                    $query->orWhereKey($includeIds);
+                }
+            })
+            ->orderBy('sort_order')
+            ->get();
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

@@ -1,6 +1,6 @@
-# Travels & Car Wash Business Management PWA
+# Travels & Car Wash Business Management
 
-A complete, production-ready, mobile-first Progressive Web Application (PWA) designed for small business owners managing dual business operations:
+A complete, production-ready, mobile-first web application designed for small business owners managing dual business operations:
 1. **Travels & Fleet Business**: 6–20 vehicles, daily trip tracking, driver details, odometer readings, and vehicle expenses.
 2. **Car Wash Business**: Multi-service catalogue, walk-in billing, and transaction tracking.
 3. **Shared Infrastructure**: Unified customer base, Indian GST invoice generation, PDF receipts/invoices, XLSX exports, payment collection, advance ledger, and financial reporting.
@@ -11,13 +11,12 @@ A complete, production-ready, mobile-first Progressive Web Application (PWA) des
 
 - **Backend**: Laravel 12 on PHP 8.3 / 8.4
 - **Database**: MySQL 8 (InnoDB, UTF8mb4)
-- **Frontend**: React 19, TypeScript, Tailwind CSS 4, React Router 7, Recharts
+- **Frontend**: Blade templates, Tailwind CSS (CDN), Chart.js (CDN), vanilla JS
 - **Tabular Data**: Yajra Laravel DataTables (server-side pagination, sorting, search, column filters)
 - **Audit & Activity**: Spatie Laravel Activitylog
 - **PDF Generation**: Barryvdh Laravel DomPDF
 - **Excel Export**: Maatwebsite Laravel Excel / PhpSpreadsheet
 - **Authentication**: Laravel Sanctum (Stateful session & Bearer API token)
-- **PWA**: Web App Manifest, Service Worker (`sw.js`), Offline Fallback (`offline.html`), Install Prompt
 
 ---
 
@@ -68,7 +67,6 @@ A complete, production-ready, mobile-first Progressive Web Application (PWA) des
 ### Prerequisites
 - PHP >= 8.3 (with `pdo_mysql`, `gd`, `bcmath`, `mbstring`, `xml`, `curl`)
 - Composer >= 2.x
-- Node.js >= 20.x and npm
 - MySQL >= 8.0
 
 ### Step-by-Step Installation
@@ -78,12 +76,7 @@ A complete, production-ready, mobile-first Progressive Web Application (PWA) des
    composer install
    ```
 
-2. **Install Frontend Dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment**:
+2. **Configure Environment**:
    ```bash
    cp .env.example .env
    php artisan key:generate
@@ -98,7 +91,7 @@ A complete, production-ready, mobile-first Progressive Web Application (PWA) des
    DB_PASSWORD=
    ```
 
-4. **Run Migrations and Seeders**:
+3. **Run Migrations and Seeders**:
    ```bash
    php artisan migrate:fresh --seed
    ```
@@ -106,7 +99,7 @@ A complete, production-ready, mobile-first Progressive Web Application (PWA) des
    - Email: `admin@example.com`
    - Password: `password`
 
-5. **Start the Local App**:
+4. **Start the Local App**:
    Start Apache and MySQL from Laragon. Ensure the Laragon virtual host points
    to this project's `public` directory; if you add or change the host while
    Laragon is running, reload Apache from the Laragon menu. Open
@@ -114,20 +107,9 @@ A complete, production-ready, mobile-first Progressive Web Application (PWA) des
    `travels-car-wash.test`, add that name to the Windows hosts file as
    `127.0.0.1 travels-car-wash.test`.
 
-   In a terminal at the project root, start Vite:
-   ```bash
-   npm run dev
-   ```
-   `npm run dev` serves frontend assets only; Laragon's Apache serves Laravel.
-   Keep this command running while developing. Do not open `http://localhost:5173`
-   as the application URL.
+   Frontend assets are served via CDN (Tailwind CSS, Chart.js) — no build step required.
 
-   For a production frontend build instead of Vite hot reload, run:
-   ```bash
-   npm run build
-   ```
-
-6. **Run Test Suite**:
+5. **Run Test Suite**:
    ```bash
    php artisan test
    ```
@@ -159,7 +141,6 @@ before caching configuration.
 
 ```bash
 composer install --no-dev --optimize-autoloader
-npm run build
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
@@ -189,17 +170,6 @@ server {
     add_header X-Content-Type-Options "nosniff";
     add_header X-XSS-Protection "1; mode=block";
     add_header Referrer-Policy "strict-origin-when-cross-origin";
-
-    # Service Worker and PWA Manifest caching headers
-    location /sw.js {
-        add_header Cache-Control "no-cache, no-store, must-revalidate";
-        add_header Pragma "no-cache";
-        expires 0;
-    }
-
-    location /manifest.json {
-        add_header Cache-Control "max-age=86400";
-    }
 
     # Static Assets Cache
     location ~* \.(css|js|png|jpg|jpeg|gif|svg|ico|woff2)$ {
@@ -293,18 +263,9 @@ gunzip < /var/backups/travels-car-wash/db_YYYYMMDD_HHMMSS.sql.gz | mysql -u your
 
 ---
 
-## 8. Progressive Web App (PWA) Verification
+## 8. Mobile Quick Actions
 
-1. **Service Worker (`/sw.js`)**:
-   - Caches static app assets and `/offline.html`.
-   - Never caches API responses (`/api/*`) to prevent financial data exposure.
-   - Provides graceful offline indicator when connectivity is interrupted.
-2. **Web App Manifest (`/manifest.json`)**:
-   - Configured with `display: standalone`, `theme_color: #1e40af`, and PNG icons in `192x192` and `512x512`.
-3. **Mobile Quick Action Drawer**:
-   - Instant 1-tap entry shortcuts for: `Add Trip`, `Add Expense`, `Create Invoice`, `Record Payment`, and `Create Car Wash Bill`.
-
----
+- Instant 1-tap entry shortcuts for: `Add Trip`, `Add Expense`, `Create Invoice`, `Record Payment`, and `Create Car Wash Bill`.
 
 ## 9. Security Checklist
 

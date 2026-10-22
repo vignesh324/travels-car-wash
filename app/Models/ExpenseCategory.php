@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasAuditFields;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
 
 class ExpenseCategory extends Model
 {
@@ -18,6 +19,21 @@ class ExpenseCategory extends Model
         'is_capital' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    public static function dropdownOptions(?string $type = null, ?int $includeId = null): Collection
+    {
+        return static::query()
+            ->when($type, fn($query, $value) => $query->where('type', $value))
+            ->where(function ($query) use ($includeId) {
+                $query->where('is_active', true);
+                if ($includeId) {
+                    $query->orWhereKey($includeId);
+                }
+            })
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
 
     public function vehicleExpenses()
     {

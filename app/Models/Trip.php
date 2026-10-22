@@ -6,6 +6,7 @@ use App\Traits\HasAuditFields;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Collection;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
@@ -37,6 +38,15 @@ class Trip extends Model
         'is_taxable' => 'boolean',
         'is_invoiced' => 'boolean',
     ];
+
+    public static function invoiceableDropdownOptions(): Collection
+    {
+        return static::query()
+            ->where('status', 'completed')
+            ->where('is_invoiced', false)
+            ->orderByDesc('trip_date')
+            ->get(['id', 'customer_id', 'trip_number', 'trip_date', 'total_amount']);
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

@@ -228,6 +228,41 @@ class InvoicePaymentTest extends TestCase
         $this->assertEquals(0, $res2->json('recordsFiltered'));
     }
 
+    public function test_invoices_filter_by_multiple_statuses(): void
+    {
+        $invoiceAttributes = [
+            'invoice_date' => '2025-06-01',
+            'customer_id' => $this->customer->id,
+            'source' => 'travels',
+            'customer_name' => 'Acme Corp',
+            'total_amount' => 1180,
+            'balance_due' => 680,
+            'issued_at' => now(),
+        ];
+        $issuedInvoice = Invoice::create($invoiceAttributes + [
+            'invoice_number' => 'INV-TEST-001',
+            'status' => 'issued',
+        ]);
+        $partialInvoice = Invoice::create($invoiceAttributes + [
+            'invoice_number' => 'INV-TEST-002',
+            'status' => 'partial',
+        ]);
+
+        $response = $this->actingAs($this->user)->getJson(route('invoices.getData', [
+            'customer_id' => $this->customer->id,
+            'status' => 'issued,partial',
+            'start' => 0,
+            'length' => 100,
+        ]));
+
+        $response->assertOk();
+        $this->assertEquals(2, $response->json('recordsFiltered'));
+        $this->assertEqualsCanonicalizing(
+            [$issuedInvoice->id, $partialInvoice->id],
+            array_column($response->json('data'), 'id')
+        );
+    }
+
     // ── Payments ──────────────────────────────────────────────────────────────
 
     public function test_record_payment(): void

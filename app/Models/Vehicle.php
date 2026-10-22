@@ -6,6 +6,7 @@ use App\Traits\HasAuditFields;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Collection;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -29,6 +30,19 @@ class Vehicle extends Model
         'puc_expiry' => 'date',
         'is_active' => 'boolean',
     ];
+
+    public static function dropdownOptions(?int $includeId = null): Collection
+    {
+        return static::query()
+            ->where(function ($query) use ($includeId) {
+                $query->where('is_active', true);
+                if ($includeId) {
+                    $query->orWhereKey($includeId);
+                }
+            })
+            ->orderBy('name')
+            ->get();
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

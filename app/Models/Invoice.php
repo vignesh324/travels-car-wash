@@ -6,6 +6,7 @@ use App\Traits\HasAuditFields;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Collection;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
@@ -42,6 +43,15 @@ class Invoice extends Model
         'amount_paid' => 'decimal:2',
         'balance_due' => 'decimal:2',
     ];
+
+    public static function outstandingDropdownOptions(): Collection
+    {
+        return static::query()
+            ->whereIn('status', ['issued', 'partial'])
+            ->where('balance_due', '>', 0)
+            ->orderByDesc('invoice_date')
+            ->get(['id', 'customer_id', 'invoice_number', 'invoice_date', 'balance_due']);
+    }
 
     public function getActivitylogOptions(): LogOptions
     {
