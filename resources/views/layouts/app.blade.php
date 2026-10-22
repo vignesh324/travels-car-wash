@@ -26,7 +26,9 @@
     </div>
 </div>
 
-<div id="toast-container" class="position-fixed top-0 end-0 p-3 z-3"></div>
+@include('layouts.partials.mobile-navigation')
+
+<div id="toast-container" class="position-fixed top-0 end-0 mt-5 p-3 z-3 pe-none"></div>
 <x-ajax-modal />
 <x-record-view-modal />
 

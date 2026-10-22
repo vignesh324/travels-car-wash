@@ -59,7 +59,7 @@
             </div>
             <p id="veh-count" class="small text-secondary mb-0" role="status" aria-live="polite" aria-atomic="true">Loading vehicle register…</p>
         </div>
-        <div class="table-responsive" tabindex="0" aria-label="Vehicle register. Scroll horizontally to see all columns.">
+        <div class="table-responsive" tabindex="0" aria-label="Vehicle register. Expand a row to view all details and actions.">
             <table id="vehicles-dt" class="table table-hover align-middle mb-0 small w-100" aria-describedby="veh-count">
                 <caption class="visually-hidden">Fleet register with registration, vehicle name, type, fuel, driver, status, and available actions.</caption>
                 <thead>
@@ -75,7 +75,7 @@
                 </thead>
             </table>
         </div>
-        <p class="small text-secondary d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
+        <p class="small text-secondary d-md-none mb-0 px-3 pb-3">Tap + on a row to see all details and actions</p>
     </section>
     @include('vehicles.partials.view-modal')
 </div>

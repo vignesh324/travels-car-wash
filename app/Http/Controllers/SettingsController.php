@@ -6,13 +6,21 @@ use App\Models\BusinessProfile;
 use App\Services\BusinessProfileLogoStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SettingsController extends Controller
 {
     public function index()
     {
         return view('settings.index');
+    }
+
+    public function profile()
+    {
+        return view('profile.index');
     }
 
     public function show(Request $request)
@@ -74,5 +82,46 @@ class SettingsController extends Controller
         activity()->causedBy(Auth::user())->log('Business profile updated');
 
         return response()->json($profile->fresh());
+    }
+
+    public function updateAccount(Request $request)
+    {
+        $user = $request->user();
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+        ]);
+
+        $user->update($data);
+
+        return response()->json([
+            'message' => 'Personal profile saved.',
+            'user' => $user->only(['name', 'email']),
+        ]);
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $data = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = $request->user();
+        if (!Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The current password is incorrect.'],
+            ]);
+        }
+
+        $user->update(['password' => $data['new_password']]);
+        activity()->causedBy($user)->log('Password changed');
+
+        return response()->json(['message' => 'Password changed successfully.']);
     }
 }

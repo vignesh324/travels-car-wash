@@ -2,10 +2,14 @@
 @section('title', 'Settings')
 @section('content')
 <div class="mb-4">
-    <h2 class="h4 fw-bold mb-1">Business settings</h2>
-    <p class="text-muted small mb-0">Manage business details and defaults used on invoices and receipts.</p>
+    <h2 class="h4 fw-bold mb-1">Settings</h2>
+    <p class="text-muted small mb-0">Manage your business details and document defaults.</p>
 </div>
 
+<div class="mb-3">
+    <h3 class="h5 fw-semibold mb-1">Business settings</h3>
+    <p class="text-muted small mb-0">Manage business details and defaults used on invoices and receipts.</p>
+</div>
 <div id="settings-error" class="alert alert-danger d-none" role="alert"></div>
 <div id="settings-loading" class="card border-0 shadow-sm"><div class="card-body text-center text-muted py-5"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Loading business settings…</div></div>
 
@@ -143,6 +147,11 @@ async function saveSettings(event) {
         if (sidebarBusinessName) {
             sidebarBusinessName.textContent = data.business_name;
             sidebarBusinessName.title = data.business_name;
+        }
+        const mobileBusinessName = document.getElementById('mobile-business-name');
+        if (mobileBusinessName) {
+            mobileBusinessName.textContent = data.business_name;
+            mobileBusinessName.title = data.business_name;
         }
         if (data.logo_url) {
             document.getElementById('logo-preview').src = data.logo_url;

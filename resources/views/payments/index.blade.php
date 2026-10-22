@@ -55,7 +55,7 @@
   </section>
 
   <div class="card overflow-hidden">
-    <div class="table-responsive p-2" tabindex="0" aria-label="Payments table. Scroll horizontally to reach row actions.">
+    <div class="table-responsive p-2" tabindex="0" aria-label="Payments table. Expand a row to view all details and actions.">
       <table id="payments-dt" class="table table-hover align-middle mb-0 small w-100">
         <thead class="table-light">
           <tr>
@@ -66,7 +66,7 @@
         </thead>
       </table>
     </div>
-    <p class="small text-secondary d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
+    <p class="small text-secondary d-md-none mb-0 px-3 pb-3">Tap + on a row to see all details and actions</p>
   </div>
 </div>
 

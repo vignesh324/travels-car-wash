@@ -48,7 +48,7 @@
                 </tr></thead>
             </table>
         </div>
-        <p class="small text-secondary d-md-none mb-0 px-3 pb-3">Swipe or scroll horizontally to see all columns</p>
+        <p class="small text-secondary d-md-none mb-0 px-3 pb-3">Tap + on a row to see all details and actions</p>
     </section>
 </div>
 @endsection

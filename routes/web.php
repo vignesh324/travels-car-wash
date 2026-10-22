@@ -141,6 +141,9 @@ Route::middleware('auth')->group(function () {
 
     // Settings
     Route::get('settings',  [SettingsController::class, 'index'])->name('settings.index');
+    Route::get('profile', [SettingsController::class, 'profile'])->name('profile.index');
     Route::get('settings/profile', [SettingsController::class, 'show'])->name('settings.show');
     Route::put('settings',  [SettingsController::class, 'update'])->name('settings.update');
+    Route::put('settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account.update');
+    Route::put('settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
 });

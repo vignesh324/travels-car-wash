@@ -82,8 +82,14 @@ function closeSidebar() {
     toggle.focus();
 }
 
+let activeQuickMenuToggle = null;
+
 function positionQuickDropdown(dropdown, toggle) {
-    dropdown.style.setProperty('--quick-dropdown-top', `${toggle.getBoundingClientRect().bottom + 6}px`);
+    const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+    const top = isMobile
+        ? Math.max(8, toggle.getBoundingClientRect().top - dropdown.offsetHeight - 8)
+        : toggle.getBoundingClientRect().bottom + 6;
+    dropdown.style.setProperty('--quick-dropdown-top', `${top}px`);
     const clientWidth = document.documentElement.clientWidth;
     dropdown.style.setProperty('--quick-dropdown-max-width', `${Math.max(0, clientWidth - 24)}px`);
     dropdown.style.setProperty('--quick-dropdown-right', '12px');
@@ -94,16 +100,21 @@ function positionQuickDropdown(dropdown, toggle) {
     }
 }
 
-function toggleQuickMenu() {
+function toggleQuickMenu(toggleId = 'quick-action-toggle') {
     const dropdown = document.getElementById('quick-dropdown');
-    const toggle = document.getElementById('quick-action-toggle');
+    const toggle = document.getElementById(toggleId);
     const isOpening = !dropdown.classList.contains('show');
 
+    if (activeQuickMenuToggle && activeQuickMenuToggle !== toggle) {
+        activeQuickMenuToggle.setAttribute('aria-expanded', 'false');
+    }
     dropdown.classList.toggle('show', isOpening);
     toggle.setAttribute('aria-expanded', String(isOpening));
     if (isOpening) {
+        activeQuickMenuToggle = toggle;
         positionQuickDropdown(dropdown, toggle);
     } else if (!isOpening) {
+        activeQuickMenuToggle = null;
         dropdown.style.removeProperty('--quick-dropdown-top');
         dropdown.style.removeProperty('--quick-dropdown-right');
         dropdown.style.removeProperty('--quick-dropdown-max-width');
@@ -117,10 +128,10 @@ window.toggleQuickMenu = toggleQuickMenu;
 
 document.addEventListener('click', event => {
     const menu = document.getElementById('quick-dropdown');
-    const toggle = document.getElementById('quick-action-toggle');
-    if (menu.classList.contains('show') && !event.target.closest('#quick-action-menu')) {
+    if (menu.classList.contains('show') && !event.target.closest('#quick-action-menu, #mobile-quick-action-toggle')) {
         menu.classList.remove('show');
-        toggle.setAttribute('aria-expanded', 'false');
+        if (activeQuickMenuToggle) activeQuickMenuToggle.setAttribute('aria-expanded', 'false');
+        activeQuickMenuToggle = null;
         menu.style.removeProperty('--quick-dropdown-top');
         menu.style.removeProperty('--quick-dropdown-right');
         menu.style.removeProperty('--quick-dropdown-max-width');
@@ -141,31 +152,66 @@ window.addEventListener('resize', () => {
     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', String(isOpen));
 
     const dropdown = document.getElementById('quick-dropdown');
-    if (!dropdown.classList.contains('show')) return;
+    if (dropdown.classList.contains('show') && activeQuickMenuToggle?.isConnected) {
+        positionQuickDropdown(dropdown, activeQuickMenuToggle);
+    }
 
-    positionQuickDropdown(dropdown, document.getElementById('quick-action-toggle'));
+    document.querySelectorAll('table.mobile-data-table').forEach(table => {
+        if ($.fn.DataTable.isDataTable(table)) {
+            decorateMobileDataTable($(table).DataTable());
+        }
+    });
 });
 
 document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
 
     const menu = document.getElementById('quick-dropdown');
-    const toggle = document.getElementById('quick-action-toggle');
     if (menu.classList.contains('show')) {
         menu.classList.remove('show');
-        toggle.setAttribute('aria-expanded', 'false');
+        const quickMenuToggle = activeQuickMenuToggle;
+        if (quickMenuToggle) {
+            quickMenuToggle.setAttribute('aria-expanded', 'false');
+            if (quickMenuToggle.isConnected) quickMenuToggle.focus();
+        }
+        activeQuickMenuToggle = null;
         menu.style.removeProperty('--quick-dropdown-top');
         menu.style.removeProperty('--quick-dropdown-right');
         menu.style.removeProperty('--quick-dropdown-max-width');
-        toggle.focus();
     }
 
     if (document.getElementById('sidebar').classList.contains('show')) {
         closeSidebar();
     }
+
+    closeMobileMoreMenu();
 });
 
 syncSidebarAccessibility(document.getElementById('sidebar').classList.contains('show'));
+
+function closeMobileMoreMenu(returnFocus = false) {
+    const menu = document.getElementById('mobile-more-menu');
+    const toggle = document.getElementById('mobile-more-toggle');
+    if (!menu || !toggle) return;
+    menu.hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+    if (returnFocus) toggle.focus();
+}
+
+document.getElementById('mobile-more-toggle')?.addEventListener('click', event => {
+    const toggle = event.currentTarget;
+    const menu = document.getElementById('mobile-more-menu');
+    const isOpening = menu.hidden;
+    menu.hidden = !isOpening;
+    toggle.setAttribute('aria-expanded', String(isOpening));
+});
+
+document.addEventListener('click', event => {
+    const menu = document.getElementById('mobile-more-menu');
+    if (menu && !menu.hidden && !event.target.closest('#mobile-bottom-nav')) {
+        closeMobileMoreMenu();
+    }
+});
 
 window.api = {
     async request(method, url, data) {
@@ -342,11 +388,91 @@ window.dtAjax = function(url, extraParams) {
     };
 };
 
+function mobileDataTableDetails(row) {
+    const table = row.node().closest('table');
+    const headers = Array.from(table.querySelectorAll('thead tr:first-child th'));
+    const cells = Array.from(row.node().cells);
+    const details = document.createElement('div');
+    details.className = 'mobile-row-details';
+
+    cells.slice(3).forEach((cell, offset) => {
+        const index = offset + 3;
+        const item = document.createElement('div');
+        const label = document.createElement('span');
+        const value = document.createElement('div');
+        item.className = 'mobile-row-detail';
+        label.className = 'mobile-row-detail-label';
+        value.className = 'mobile-row-detail-value';
+        label.textContent = headers[index]?.textContent.trim() || `Column ${index + 1}`;
+        value.innerHTML = cell.innerHTML;
+        value.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+        item.append(label, value);
+        details.append(item);
+    });
+
+    return details;
+}
+
+function setMobileRowToggleState(button, expanded) {
+    button.classList.toggle('btn-success', !expanded);
+    button.classList.toggle('btn-danger', expanded);
+    button.setAttribute('aria-expanded', String(expanded));
+    button.setAttribute('aria-label', `${expanded ? 'Hide' : 'Show'} additional row details`);
+    button.innerHTML = `<i class="bi bi-${expanded ? 'dash' : 'plus'}-lg" aria-hidden="true"></i>`;
+}
+
+function decorateMobileDataTable(api) {
+    const table = api.table().node();
+    const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+    table.classList.add('mobile-data-table');
+    table.closest('.table-responsive')?.classList.add('mobile-no-scroll');
+
+    if (!table.dataset.mobileRowsBound) {
+        table.addEventListener('click', event => {
+            const button = event.target.closest('.mobile-row-toggle');
+            if (!button || !window.matchMedia('(max-width: 767.98px)').matches) return;
+            const row = $(button.closest('tr')).closest('table').DataTable().row(button.closest('tr'));
+            if (row.child.isShown()) {
+                row.child.hide();
+                setMobileRowToggleState(button, false);
+            } else {
+                row.child(mobileDataTableDetails(row), 'mobile-data-table-child').show();
+                setMobileRowToggleState(button, true);
+            }
+        });
+        table.dataset.mobileRowsBound = 'true';
+    }
+
+    api.rows({ page: 'current' }).every(function() {
+        const row = this;
+        const node = row.node();
+        const firstCell = node.cells[0];
+        if (!firstCell) return;
+
+        if (!isMobile) {
+            row.child.hide();
+            firstCell.querySelector('.mobile-row-toggle')?.remove();
+            return;
+        }
+
+        if (node.cells.length < 4) return;
+        let button = firstCell.querySelector('.mobile-row-toggle');
+        if (!button) {
+            button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'mobile-row-toggle btn';
+            firstCell.prepend(button);
+        }
+
+        setMobileRowToggleState(button, row.child.isShown());
+    });
+}
+
 window.initDataTable = function(tableId, ajaxUrl, columns, extraParams, options) {
     if ($.fn.DataTable.isDataTable('#' + tableId)) {
         $('#' + tableId).DataTable().destroy();
     }
-    return $('#' + tableId).DataTable(Object.assign({
+    const config = Object.assign({
         serverSide: true,
         processing: true,
         searching: true,
@@ -360,7 +486,13 @@ window.initDataTable = function(tableId, ajaxUrl, columns, extraParams, options)
             emptyTable: 'No records found',
             zeroRecords: 'No matching records found',
         },
-    }, options || {}));
+    }, options || {});
+    const drawCallback = config.drawCallback;
+    config.drawCallback = function(settings) {
+        if (drawCallback) drawCallback.call(this, settings);
+        decorateMobileDataTable(this.api());
+    };
+    return $('#' + tableId).DataTable(config);
 };
 
 window.loadAddEditModal = async function(url) {
@@ -425,12 +557,6 @@ window.openRecordView = async function({ url, title, fields }) {
 };
 
 $(document).ready(function() {
-    document.addEventListener('click', function(event) {
-        const menu = document.getElementById('quick-action-menu');
-        const dropdown = document.getElementById('quick-dropdown');
-        if (menu && !menu.contains(event.target) && dropdown) dropdown.classList.remove('show');
-    });
-
     const filterTimeouts = new Map();
 
     $(document).on('change', '[data-ajax-table]', function() {
