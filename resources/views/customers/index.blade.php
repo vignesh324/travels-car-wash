@@ -1,19 +1,19 @@
 @extends('layouts.app')
 @section('title', 'Customers')
 @section('content')
-<div class="resource-page">
-  <header class="resource-page-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+<div >
+  <header class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-      <p class="resource-kicker">Customer records</p>
-      <h2 class="resource-heading fw-bold mb-1">Customers</h2>
+      <p class="text-uppercase small fw-semibold text-secondary">Customer records</p>
+      <h2 class="h2 fw-bold mb-1">Customers</h2>
       <p class="small text-muted mb-0" id="cust-count" aria-live="polite"></p>
     </div>
-    <x-action-button action="customers.add" label="Add Customer" size="" class="resource-primary-action px-4 py-2 fw-semibold rounded-2" />
+    <x-action-button action="customers.add" label="Add Customer" size="" class="px-4 py-2 fw-semibold rounded-2" />
   </header>
 
-  <section class="card resource-filter-card mb-3" aria-labelledby="customer-filter-title">
+  <section class="card mb-3" aria-labelledby="customer-filter-title">
     <div class="card-body">
-      <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+      <div class="d-flex align-items-center gap-2 mb-3">
         <i class="bi bi-sliders2" aria-hidden="true"></i>
         <h3 id="customer-filter-title" class="small fw-semibold mb-0">Customer filters</h3>
       </div>
@@ -31,8 +31,8 @@
     </div>
   </section>
 
-  <div class="card resource-table-card overflow-hidden">
-    <div class="table-responsive resource-table-scroll p-2">
+  <div class="card overflow-hidden">
+    <div class="table-responsive p-2">
       <table id="customers-dt" class="table table-hover align-middle mb-0 small w-100">
         <thead class="table-light">
           <tr>
@@ -47,7 +47,7 @@
         </thead>
       </table>
     </div>
-    <p class="resource-scroll-hint d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
+    <p class="small text-secondary d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
   </div>
 </div>
 
@@ -204,7 +204,7 @@ async function openStatement(uuid, name) {
       </div>
       ${parseFloat(data.advance_balance||0)>0?`<div class="p-3 bg-warning-subtle rounded-2 border border-warning-subtle small text-warning-emphasis mb-4"><strong>Advance Credit Available:</strong> ${fmt.currency(data.advance_balance)}</div>`:''}
       <p class="small fw-bold text-uppercase text-muted mb-2">Invoices</p>
-      <div class="overflow-auto border border-secondary-subtle rounded-2 mb-4" style="max-height:12rem">
+      <div class="overflow-auto border border-secondary-subtle rounded-2 mb-4">
         <table class="small table table-hover align-middle mb-0"><thead class="bg-light"><tr>
           <th class="px-3 py-2 text-start fw-semibold">Invoice #</th>
           <th class="px-3 py-2 text-start fw-semibold">Date</th>
@@ -222,7 +222,7 @@ async function openStatement(uuid, name) {
         </tbody></table>
       </div>
       <p class="small fw-bold text-uppercase text-muted mb-2">Payments Received</p>
-      <div class="overflow-auto border border-secondary-subtle rounded-2 mb-4" style="max-height:12rem">
+      <div class="overflow-auto border border-secondary-subtle rounded-2 mb-4">
         <table class="small table table-hover align-middle mb-0"><thead class="bg-light"><tr>
           <th class="px-3 py-2 text-start fw-semibold">Receipt #</th>
           <th class="px-3 py-2 text-start fw-semibold">Date</th>

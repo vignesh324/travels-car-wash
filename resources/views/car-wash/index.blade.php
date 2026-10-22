@@ -1,68 +1,19 @@
 @extends('layouts.app')
 @section('title', 'Car Wash')
 
-@push('head')
-<style>
-    .car-wash-page .wash-section-heading {
-        color: var(--app-ink);
-        font-size: 1rem;
-        font-weight: 700;
-        letter-spacing: -.015em;
-    }
-    .car-wash-page .wash-section-note { color: var(--app-muted); font-size: .78rem; }
-    .car-wash-page .wash-panel-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: .75rem;
-        padding: 1rem 1.15rem .85rem;
-        border-bottom: 1px solid var(--app-line);
-    }
-    .car-wash-page .wash-panel-mark {
-        display: inline-flex;
-        width: 2rem;
-        height: 2rem;
-        align-items: center;
-        justify-content: center;
-        margin-right: .65rem;
-        border: 1px solid #c9e0dc;
-        border-radius: .5rem;
-        background: #edf5f3;
-        color: var(--app-accent);
-    }
-    .car-wash-page .wash-add-service {
-        border-color: var(--app-accent);
-        color: #075c5c;
-        font-weight: 650;
-    }
-    .car-wash-page .wash-add-service:hover {
-        border-color: var(--app-accent);
-        background: #edf5f3;
-        color: #075c5c;
-    }
-    .car-wash-page .wash-modal .modal-content { overflow: hidden; border-radius: .8rem; }
-    .car-wash-page .wash-modal .modal-header { background: #f3f8f7; border-bottom-color: var(--app-line) !important; }
-    .car-wash-page #car-wash-transactions-dt { min-width: 850px; }
-    .car-wash-page #car-wash-services-dt { min-width: 700px; }
-    @media (max-width: 575.98px) {
-        .car-wash-page .wash-panel-head { align-items: flex-start; padding-inline: .9rem; }
-    }
-</style>
-@endpush
-
 @section('content')
-<div class="resource-page car-wash-page">
-    <header class="resource-page-header d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+<div >
+    <header class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
         <div>
-            <span class="resource-kicker">Wash operations</span>
-            <h1 class="resource-heading fw-bold mb-1">Car Wash</h1>
-            <p class="resource-intro small mb-0">Manage wash transactions, service pricing and walk-in billing.</p>
+            <span class="text-uppercase small fw-semibold text-secondary">Wash operations</span>
+            <h1 class="h2 fw-bold mb-1">Car Wash</h1>
+            <p class="text-secondary small mb-0">Manage wash transactions, service pricing and walk-in billing.</p>
         </div>
-        <x-action-button action="car-wash.add-transaction" label="New transaction" id="carwash-primary-action" class="resource-primary-action" />
+        <x-action-button action="car-wash.add-transaction" label="New transaction" id="carwash-primary-action"  />
     </header>
 
     <nav aria-label="Car wash sections" class="mb-3">
-        <ul class="nav resource-tabs" role="tablist">
+        <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" type="button" role="tab" id="wash-transactions-tab" aria-controls="wash-transactions-view" aria-selected="true" onclick="switchWashTab('transactions')">
                     <i class="bi bi-receipt me-2" aria-hidden="true"></i>Transactions
@@ -79,13 +30,13 @@
     <section id="wash-transactions-view" role="tabpanel" aria-labelledby="wash-transactions-tab">
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
             <div>
-                <h2 class="wash-section-heading mb-1">Transaction register</h2>
-                <p class="wash-section-note mb-0">Review bills, payment status and recent wash activity.</p>
+                <h2 class="h5 mb-1">Transaction register</h2>
+                <p class="small text-secondary mb-0">Review bills, payment status and recent wash activity.</p>
             </div>
         </div>
-        <div class="card resource-filter-card mb-3">
+        <div class="card mb-3">
             <div class="card-body">
-                <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+                <div class="d-flex align-items-center gap-2 mb-3">
                     <i class="bi bi-sliders2" aria-hidden="true"></i>
                     <h3 class="small fw-semibold mb-0">Transaction filters</h3>
                 </div>
@@ -119,56 +70,56 @@
                 </div>
             </div>
         </div>
-        <div class="card resource-table-card overflow-hidden">
-            <div class="wash-panel-head">
-                <div class="d-flex align-items-center min-w-0">
-                    <span class="wash-panel-mark"><i class="bi bi-list-check" aria-hidden="true"></i></span>
+        <div class="card overflow-hidden">
+            <div class="card-header d-flex align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center overflow-hidden">
+                    <span class="text-secondary"><i class="bi bi-list-check" aria-hidden="true"></i></span>
                     <div>
-                        <h3 class="wash-section-heading mb-0">Wash transactions</h3>
-                        <span class="wash-section-note">Search, filter and manage recorded bills.</span>
+                        <h3 class="h5 mb-0">Wash transactions</h3>
+                        <span class="small text-secondary">Search, filter and manage recorded bills.</span>
                     </div>
                 </div>
                 <span class="badge rounded-pill text-bg-light border text-secondary d-none d-sm-inline-flex">Live register</span>
             </div>
-            <div class="table-responsive resource-table-scroll">
+            <div class="table-responsive">
                 <table id="car-wash-transactions-dt" class="table table-hover align-middle mb-0 w-100">
                     <thead class="table-light"><tr><th scope="col">Bill #</th><th scope="col">Date</th><th scope="col">Customer / vehicle</th><th scope="col">Services</th><th scope="col" class="text-end">Total</th><th scope="col">Payment</th><th scope="col" class="text-end">Actions</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
-            <p class="resource-scroll-hint d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
+            <p class="small text-secondary d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
         </div>
     </section>
 
     <section id="wash-services-view" class="d-none" role="tabpanel" aria-labelledby="wash-services-tab">
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
             <div>
-                <h2 class="wash-section-heading mb-1">Service catalogue</h2>
-                <p class="wash-section-note mb-0">Maintain available wash options, pricing and tax rates.</p>
+                <h2 class="h5 mb-1">Service catalogue</h2>
+                <p class="small text-secondary mb-0">Maintain available wash options, pricing and tax rates.</p>
             </div>
-            <x-action-button action="car-wash.add-service" label="Add service" variant="outline-primary" class="wash-add-service" />
+            <x-action-button action="car-wash.add-service" label="Add service" variant="outline-primary"  />
         </div>
-        <div class="card resource-table-card overflow-hidden">
-            <div class="wash-panel-head">
-                <div class="d-flex align-items-center min-w-0">
-                    <span class="wash-panel-mark"><i class="bi bi-droplet" aria-hidden="true"></i></span>
+        <div class="card overflow-hidden">
+            <div class="card-header d-flex align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center overflow-hidden">
+                    <span class="text-secondary"><i class="bi bi-droplet" aria-hidden="true"></i></span>
                     <div>
-                        <h3 class="wash-section-heading mb-0">Available services</h3>
-                        <span class="wash-section-note">Pricing is used when creating a transaction.</span>
+                        <h3 class="h5 mb-0">Available services</h3>
+                        <span class="small text-secondary">Pricing is used when creating a transaction.</span>
                     </div>
                 </div>
             </div>
-            <div class="table-responsive resource-table-scroll">
+            <div class="table-responsive">
                 <table id="car-wash-services-dt" class="table table-hover align-middle mb-0 w-100">
                     <thead class="table-light"><tr><th scope="col">Service</th><th scope="col">Description</th><th scope="col" class="text-end">Price</th><th scope="col" class="text-end">Tax</th><th scope="col">Status</th><th scope="col" class="text-end">Actions</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
-            <p class="resource-scroll-hint d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
+            <p class="small text-secondary d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
         </div>
     </section>
 
-    <div id="wash-view-modal" class="modal fade wash-modal" tabindex="-1" aria-hidden="true" aria-labelledby="wash-view-title">
+    <div id="wash-view-modal" class="modal fade" tabindex="-1" aria-hidden="true" aria-labelledby="wash-view-title">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
             <div class="modal-content">
                 <div class="modal-header d-flex align-items-center justify-content-between px-4">

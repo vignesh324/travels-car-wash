@@ -1,19 +1,19 @@
 @extends('layouts.app')
 @section('title', 'Invoices')
 @section('content')
-<div class="resource-page">
-  <header class="resource-page-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+<div >
+  <header class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-      <p class="resource-kicker">Billing records</p>
-      <h2 class="resource-heading fw-bold mb-1">Invoices</h2>
+      <p class="text-uppercase small fw-semibold text-secondary">Billing records</p>
+      <h2 class="h2 fw-bold mb-1">Invoices</h2>
       <p class="small text-muted mb-0" id="inv-count" aria-live="polite"></p>
     </div>
-    <x-action-button action="invoices.add" label="Create Invoice" size="" class="resource-primary-action px-4 py-2 fw-semibold rounded-2" />
+    <x-action-button action="invoices.add" label="Create Invoice" size="" class="px-4 py-2 fw-semibold rounded-2" />
   </header>
 
-  <section class="card resource-filter-card mb-4" aria-labelledby="invoice-filter-title">
+  <section class="card mb-4" aria-labelledby="invoice-filter-title">
     <div class="card-body">
-      <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+      <div class="d-flex align-items-center gap-2 mb-3">
         <i class="bi bi-sliders2" aria-hidden="true"></i>
         <h3 id="invoice-filter-title" class="small fw-semibold mb-0">Invoice filters</h3>
       </div>
@@ -58,8 +58,8 @@
     </div>
   </section>
 
-  <div class="card resource-table-card overflow-hidden">
-    <div class="table-responsive resource-table-scroll p-2">
+  <div class="card overflow-hidden">
+    <div class="table-responsive p-2">
       <table id="invoices-dt" class="table table-hover align-middle mb-0 small w-100">
         <thead class="table-light">
           <tr>
@@ -70,7 +70,7 @@
         </thead>
       </table>
     </div>
-    <p class="resource-scroll-hint d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
+    <p class="small text-secondary d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
   </div>
 </div>
 
@@ -102,7 +102,7 @@
 @push('scripts')
 <script>
 let invTable = null, invCancelUuid = null;
-let invCustomers = @json($customers), invTrips = [];
+let invTrips = [];
 const invHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function initInvoicesTable() {
@@ -135,27 +135,22 @@ function initInvoicesTable() {
   );
 }
 
-// ── Form builder ─────────────────────────────────────────────────────────────
-function custOpts(selId) {
-  return invCustomers.map(c => {
-    const name = (c.type === 'corporate' && c.company_name) ? c.company_name : c.name;
-    return `<option value="${invHtml(c.id)}" ${c.id == selId ? 'selected' : ''}>${invHtml(name)}</option>`;
-  }).join('');
-}
-
 function buildLineItem(item, idx, showLabels) {
   const v = k => item ? (item[k] ?? '') : (k === 'quantity' ? '1' : k === 'discount' || k === 'tax_rate' ? '0' : '');
   const lbl = showLabels;
-  return `<div class="row gap-2 align-items-end bg-light rounded-2 p-2" id="inv-line-${idx}">
-    <div class="col-12 col-sm-4">
+  return `<div class="row g-2 align-items-end bg-light rounded p-2" id="inv-line-${idx}">
+    <input type="hidden" id="inv_vehicle_type_${idx}" value="${invHtml(v('vehicle_type'))}">
+    <input type="hidden" id="inv_route_${idx}" value="${invHtml(v('route'))}">
+    <input type="hidden" id="inv_service_days_${idx}" value="${invHtml(v('service_days'))}">
+    <div class="col-12 col-sm-3">
       ${lbl ? '<label class="d-block small fw-medium text-body mb-1 form-label">Description *</label>' : ''}
       <input id="inv_desc_${idx}" value="${invHtml(v('description'))}" placeholder="Service description"
-        class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-control" />
+        class="form-control form-control-sm" />
       <p id="err_inv_items_${idx}_description" class="field-error small text-danger mt-1"></p>
     </div>
     <div class="col-6 col-sm-2">
       ${lbl ? '<label class="d-block small fw-medium text-body mb-1 form-label">Source</label>' : ''}
-      <select id="inv_src_${idx}" class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-select">
+      <select id="inv_src_${idx}" class="form-select form-select-sm">
         <option value="travels" ${v('source')==='travels'?'selected':''}>Travels</option>
         <option value="carwash" ${v('source')==='carwash'?'selected':''}>Car Wash</option>
       </select>
@@ -163,35 +158,34 @@ function buildLineItem(item, idx, showLabels) {
     <div class="col-6 col-sm-1">
       ${lbl ? '<label class="d-block small fw-medium text-body mb-1 form-label">Qty</label>' : ''}
       <input id="inv_qty_${idx}" type="number" value="${invHtml(v('quantity'))}" min="0.01" step="0.01"
-        oninput="updateInvTotal()" class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-control" />
+        oninput="updateInvTotal()" class="form-control form-control-sm" />
     </div>
     <div class="col-4 col-sm-2">
       ${lbl ? '<label class="d-block small fw-medium text-body mb-1 form-label">Rate (₹)</label>' : ''}
       <input id="inv_price_${idx}" type="number" value="${invHtml(v('unit_price'))}" min="0" step="0.01"
-        oninput="updateInvTotal()" class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-control" />
+        oninput="updateInvTotal()" class="form-control form-control-sm" />
     </div>
     <div class="col-4 col-sm-1">
       ${lbl ? '<label class="d-block small fw-medium text-body mb-1 form-label">Disc</label>' : ''}
       <input id="inv_disc_${idx}" type="number" value="${invHtml(v('discount'))}" min="0" step="0.01"
-        oninput="updateInvTotal()" class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-control" />
+        oninput="updateInvTotal()" class="form-control form-control-sm" />
     </div>
     <div class="col-4 col-sm-1">
       ${lbl ? '<label class="d-block small fw-medium text-body mb-1 form-label">GST%</label>' : ''}
       <input id="inv_tax_${idx}" type="number" value="${invHtml(v('tax_rate'))}" min="0" max="100" step="0.01"
-        oninput="updateInvTotal()" class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-control" />
+        oninput="updateInvTotal()" class="form-control form-control-sm" />
     </div>
     <div class="col-6 col-sm-1 text-end">
       ${lbl ? '<p class="small text-muted mb-1">Total</p>' : ''}
       <p class="small fw-semibold text-dark py-2" id="inv_line_total_${idx}">₹0.00</p>
     </div>
     <div class="col-6 col-sm-1 d-flex justify-content-end align-items-end pb-1">
-      <button type="button" onclick="removeInvLine(${idx})" class="text-danger fs-5 leading-none fw-bold btn btn-link btn-sm">×</button>
+      <button type="button" onclick="removeInvLine(${idx})" class="text-danger fs-5 fw-bold btn btn-link btn-sm">×</button>
     </div>
   </div>`;
 }
 
 let invLineCount = 0;
-let invEditUuid  = null;
 
 function updateInvTotal() {
   let grand = 0;
@@ -227,112 +221,14 @@ function addInvLine(item) {
   updateInvTotal();
 }
 
-function buildInvForm(inv, items, trips) {
-  const isEdit = !!inv;
-  const today  = fmt.today();
-  return `
-    <input type="hidden" id="inv-edit-uuid" value="${isEdit ? invHtml(inv.uuid) : ''}" />
-    ${isEdit ? `
-    <div class="bg-light rounded-2 px-4 py-3 d-flex flex-column gap-2">
-      <div class="d-flex align-items-center justify-content-between">
-        <div>
-          <p class="small text-muted mb-1">Customer</p>
-          <p class="small fw-medium text-dark">${invHtml(inv.customer_name)}</p>
-        </div>
-        ${badge(invHtml(inv.source), inv.source === 'travels' ? 'blue' : inv.source === 'carwash' ? 'cyan' : 'purple')}
-      </div>
-      <div class="row row-cols-1 row-cols-sm-3 gap-2 pt-1 border-top border-secondary-subtle small">
-        <div><p class="text-muted">Invoice Total</p><p class="fw-semibold text-dark mt-1">${invHtml(fmt.currency(inv.total_amount))}</p></div>
-        <div><p class="text-muted">Amount Paid</p><p class="fw-semibold text-success mt-1">${invHtml(fmt.currency(inv.amount_paid))}</p></div>
-        <div><p class="text-muted">Balance Due</p><p class="fw-semibold ${parseFloat(inv.balance_due) > 0 ? 'text-danger' : 'text-success'} mt-1">${invHtml(fmt.currency(inv.balance_due))}</p></div>
-      </div>
-      ${parseFloat(inv.amount_paid) > 0 ? '<p class="small text-warning-emphasis bg-warning-subtle rounded-1 px-2 py-1">⚠ This invoice has recorded payments. Editing line items will recalculate the balance due.</p>' : ''}
-    </div>` : `
-    <div class="row row-cols-1 row-cols-sm-2 gap-4">
-      <div>
-        <label class="d-block small fw-medium text-body mb-1 form-label">Customer *</label>
-        <select id="inp_inv_customer_id" onchange="onInvCustomerChange(this.value)" required
-          class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-select">
-          <option value="">Select customer</option>${custOpts('')}
-        </select>
-        <p id="err_inv_customer_id" class="field-error small text-danger mt-1"></p>
-      </div>
-      <div>
-        <label class="d-block small fw-medium text-body mb-1 form-label" for="inp_inv_source">Source *</label>
-        <select id="inp_inv_source" class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-select">
-          <option value="travels">Travels</option>
-          <option value="carwash">Car Wash</option>
-          <option value="mixed">Mixed</option>
-        </select>
-      </div>
-    </div>`}
-    <div class="row row-cols-1 row-cols-sm-2 gap-4">
-      <div>
-        <label class="d-block small fw-medium text-body mb-1 form-label" for="inp_inv_invoice_date">Invoice Date *</label>
-        <input id="inp_inv_invoice_date" type="date" value="${invHtml(isEdit ? (inv.invoice_date||'').slice(0,10) : today)}" required
-          class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-control" />
-      </div>
-      <div>
-        <label class="d-block small fw-medium text-body mb-1 form-label" for="inp_inv_due_date">Due Date</label>
-        <input id="inp_inv_due_date" type="date" value="${invHtml(isEdit ? (inv.due_date||'').slice(0,10) : '')}"
-          class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-control" />
-      </div>
-      <div>
-        <label class="d-block small fw-medium text-body mb-1 form-label" for="inp_inv_place_of_supply">Place of Supply</label>
-        <input id="inp_inv_place_of_supply" value="${invHtml(isEdit ? (inv.place_of_supply||'') : '')}" placeholder="State name"
-          class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-control" />
-      </div>
-      <div>
-        <label class="d-block small fw-medium text-body mb-1 form-label" for="inp_inv_payment_terms">Payment Terms</label>
-        <input id="inp_inv_payment_terms" value="${invHtml(isEdit ? (inv.payment_terms||'') : '')}" placeholder="Net 30"
-          class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-control" />
-      </div>
-    </div>
-    ${!isEdit && trips && trips.length > 0 ? `
-    <div>
-      <p class="small fw-semibold text-muted text-uppercase mb-2">Link Trips (optional)</p>
-      <div class="overflow-auto overflow-auto border border-secondary-subtle rounded-2" id="inv-trips-list">
-        ${trips.map(t => `<label class="d-flex align-items-center gap-3 px-3 py-2 small form-label">
-          <input type="checkbox" name="trip_ids" value="${invHtml(t.id)}" class="rounded-1 border-secondary-subtle text-primary form-check-input" />
-          <span class="font-monospace small text-primary">${invHtml(t.trip_number)}</span>
-          <span class="text-secondary">${invHtml(fmt.date(t.trip_date))}</span>
-          <span class="ml-auto fw-semibold">${invHtml(fmt.currency(t.total_amount))}</span>
-        </label>`).join('')}
-      </div>
-    </div>` : ''}
-    <div>
-      <div class="d-flex align-items-center justify-content-between mb-2">
-        <p class="small fw-semibold text-muted text-uppercase">Line Items</p>
-        <button type="button" onclick="addInvLine(null)" class="small text-primary fw-medium btn btn-link btn-sm">+ Add Line</button>
-      </div>
-      <p id="err_inv_items" class="field-error small text-danger mb-1"></p>
-      <div id="inv-lines-wrap" class="d-flex flex-column gap-2"></div>
-      <div class="text-end mt-2 small fw-bold text-primary">
-        Grand Total (preview): <span id="inv-grand-total">₹0.00</span>
-      </div>
-    </div>
-    <div>
-      <label class="d-block small fw-medium text-body mb-1 form-label">Notes</label>
-      <textarea id="inp_inv_notes" rows="2" class="w-100 rounded-2 border border-secondary-subtle px-3 py-2 small form-control">${invHtml(isEdit ? (inv.notes||'') : '')}</textarea>
-    </div>
-    <div class="d-flex justify-content-end gap-3 pt-4 border-top">
-      <button type="button" onclick="closeModal('ajax-form-modal')" class="px-4 py-2 rounded-2 border border-secondary-subtle small fw-medium text-body btn btn-outline-secondary btn-sm">Cancel</button>
-      <button onclick="saveInvoice()" id="inv-save-btn" class="px-4 py-2 bg-primary text-white small fw-semibold rounded-2 btn btn-primary btn-sm">${isEdit ? 'Update Invoice' : 'Create Invoice'}</button>
-    </div>`;
-}
-
 async function openInvModal(uuid) {
-  invEditUuid  = uuid || null;
   invLineCount = 0;
   try {
     const url = @json(route('invoices.addEdit')) + (uuid ? `/${encodeURIComponent(uuid)}` : '');
     const response = await window.loadAddEditModal(url);
     const inv = response.invoice;
     const items = inv?.items || [];
-    const trips = response.trips || [];
-    invCustomers = response.customers || invCustomers;
-    invTrips = trips;
-    document.getElementById('inv-form-fields').innerHTML = buildInvForm(inv, items, trips);
+    invTrips = [];
     if (items.length) items.forEach(item => addInvLine(item));
     else addInvLine(null);
     updateInvTotal();
@@ -341,18 +237,92 @@ async function openInvModal(uuid) {
   }
 }
 
-function onInvCustomerChange(customerId) {
+function onInvCustomerChange() {
+  loadInvTrips();
+}
+
+function selectedInvTripIds() {
+  return Array.from(document.querySelectorAll('input[name="trip_ids"]:checked')).map(input => Number(input.value));
+}
+
+function updateInvTripSummary() {
+  const selected = invTrips.filter(trip => selectedInvTripIds().includes(Number(trip.id)));
+  const manualItems = document.getElementById('inv-manual-items');
+  if (manualItems) manualItems.classList.toggle('d-none', selected.length > 0);
+
+  const groups = new Map();
+  selected.forEach(trip => {
+    const vehicleType = trip.vehicle?.type || trip.vehicle?.name || 'Vehicle';
+    const route = trip.route || '';
+    const key = `${trip.vehicle_id}|${route.trim().toLocaleLowerCase()}`;
+    const group = groups.get(key) || {vehicleType, route, days:0, amount:0};
+    group.days += 1;
+    group.amount += Number(trip.total_amount || 0);
+    groups.set(key, group);
+  });
+  const summary = document.getElementById('inv-trip-summary');
+  if (!summary) return;
+  summary.innerHTML = groups.size ? `
+    <p class="small fw-semibold mb-2">${selected.length} trip record(s) selected</p>
+    <div class="table-responsive"><table class="table table-sm table-bordered mb-1">
+      <thead><tr><th>Vehicle type</th><th>Route</th><th class="text-end">Days</th><th class="text-end">Amount</th></tr></thead>
+      <tbody>${Array.from(groups.values()).map(group => `<tr><td>${invHtml(group.vehicleType)}</td><td>${invHtml(group.route || '—')}</td><td class="text-end">${group.days}</td><td class="text-end">${fmt.currency(group.amount)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><th colspan="3" class="text-end">Total</th><th class="text-end">${fmt.currency(selected.reduce((sum, trip) => sum + Number(trip.total_amount || 0), 0))}</th></tr></tfoot>
+    </table></div>` : '';
+}
+
+async function loadInvTrips() {
+  const customerId = document.getElementById('inp_inv_customer_id')?.value;
   const wrap = document.getElementById('inv-trips-list');
-  if (!wrap) return;
-  const trips = customerId
-    ? invTrips.filter(trip => Number(trip.customer_id) === Number(customerId))
-    : invTrips;
-  wrap.innerHTML = trips.length ? trips.map(trip => `<label class="d-flex align-items-center gap-3 px-3 py-2 small form-label">
-    <input type="checkbox" name="trip_ids" value="${invHtml(trip.id)}" class="rounded-1 border-secondary-subtle text-primary form-check-input" />
-    <span class="font-monospace small text-primary">${invHtml(trip.trip_number)}</span>
-    <span class="text-secondary">${invHtml(fmt.date(trip.trip_date))}</span>
-    <span class="ml-auto fw-semibold">${invHtml(fmt.currency(trip.total_amount))}</span>
-  </label>`).join('') : '<p class="small text-muted px-3 py-2 mb-0">No completed trips available for this customer.</p>';
+  const status = document.getElementById('inv-trip-status');
+  if (!wrap || !status) return;
+  invTrips = [];
+  document.getElementById('inv-trip-summary').innerHTML = '';
+  if (!customerId) {
+    wrap.innerHTML = '';
+    status.textContent = 'Select a customer to load trips.';
+    updateInvTripSummary();
+    return;
+  }
+
+  const dateFrom = document.getElementById('inv-trip-date-from').value;
+  const dateTo = document.getElementById('inv-trip-date-to').value;
+  status.textContent = 'Loading trips…';
+  wrap.innerHTML = '';
+  try {
+    const response = await window.api.get('/invoices/eligible-trips', {
+      customer_id: customerId,
+      date_from: dateFrom,
+      date_to: dateTo,
+    });
+    if (!response.ok) {
+      const errors = await extractErrors(response);
+      status.textContent = errors._ || 'Unable to load trips for this date range.';
+      return;
+    }
+    invTrips = await response.json();
+    status.textContent = invTrips.length ? `${invTrips.length} completed trip(s) available.` : 'No completed, uninvoiced trips found for this customer and date range.';
+    wrap.innerHTML = invTrips.length ? `
+      <label class="small d-inline-flex align-items-center gap-2 mb-2">
+        <input type="checkbox" class="form-check-input" onchange="document.querySelectorAll('input[name=trip_ids]').forEach(input => input.checked = this.checked);updateInvTripSummary()">
+        Select all
+      </label>
+      <div class="border rounded-2 overflow-auto">
+        ${invTrips.map(trip => `<label class="d-flex flex-wrap align-items-center gap-2 px-3 py-2 small border-bottom mb-0">
+          <input type="checkbox" name="trip_ids" value="${invHtml(trip.id)}" class="form-check-input" onchange="updateInvTripSummary()">
+          <span class="font-monospace text-primary">${invHtml(trip.trip_number)}</span>
+          <span>${invHtml(fmt.date(trip.trip_date))}</span>
+          <span>${invHtml(trip.vehicle?.type || trip.vehicle?.name || 'Vehicle')}</span>
+          <span>${invHtml(trip.pickup_location || '—')} → ${invHtml(trip.drop_location || '—')}</span>
+          ${trip.route ? `<span class="text-muted">Route: ${invHtml(trip.route)}</span>` : ''}
+          <span class="ms-auto fw-semibold">${fmt.currency(trip.total_amount)}</span>
+        </label>`).join('')}
+      </div>` : '';
+    updateInvTripSummary();
+  } catch (error) {
+    status.textContent = 'Unable to load trips. Please try again.';
+    toast.error(error.message || 'Unable to load trips');
+  }
 }
 
 async function saveInvoice() {
@@ -374,6 +344,9 @@ async function saveInvoice() {
       unit_price:  parseFloat(document.getElementById('inv_price_' + i)?.value) || 0,
       discount:    parseFloat(document.getElementById('inv_disc_'  + i)?.value) || 0,
       tax_rate:    parseFloat(document.getElementById('inv_tax_'   + i)?.value) || 0,
+      vehicle_type: document.getElementById('inv_vehicle_type_' + i)?.value || null,
+      route:         document.getElementById('inv_route_' + i)?.value || null,
+      service_days:  parseInt(document.getElementById('inv_service_days_' + i)?.value) || null,
     });
   }
 
@@ -383,14 +356,16 @@ async function saveInvoice() {
     place_of_supply: document.getElementById('inp_inv_place_of_supply')?.value || null,
     payment_terms:   document.getElementById('inp_inv_payment_terms')?.value || null,
     notes:           document.getElementById('inp_inv_notes')?.value || null,
-    items,
+    items: selectedInvTripIds().length ? [] : items,
   };
 
   if (!uuid) {
     payload.customer_id = parseInt(document.getElementById('inp_inv_customer_id')?.value) || null;
     payload.source      = document.getElementById('inp_inv_source')?.value || 'travels';
-    const checked = document.querySelectorAll('input[name="trip_ids"]:checked');
-    payload.trip_ids = Array.from(checked).map(el => parseInt(el.value));
+    payload.trip_ids = selectedInvTripIds();
+    if (payload.trip_ids.length) payload.source = 'travels';
+    payload.trip_date_from = document.getElementById('inv-trip-date-from')?.value || null;
+    payload.trip_date_to = document.getElementById('inv-trip-date-to')?.value || null;
   }
 
   try {
@@ -448,8 +423,8 @@ async function viewInvoice(uuid) {
     const canEdit   = inv.status !== 'paid' && inv.status !== 'cancelled';
     const canCancel = inv.status !== 'cancelled' && inv.status !== 'paid';
     const itemRows = (inv.items || []).map(it => `<tr >
-      <td class="px-3 py-2">${invHtml(it.description)}</td>
-      <td class="px-3 py-2 text-end">${it.quantity}</td>
+      <td class="px-3 py-2">${invHtml(it.vehicle_type || it.description)}${it.route ? `<div class="small text-muted">Route: ${invHtml(it.route)}</div>` : ''}</td>
+      <td class="px-3 py-2 text-end">${it.service_days ?? it.quantity}</td>
       <td class="px-3 py-2 text-end">${fmt.currency(it.unit_price)}</td>
       <td class="px-3 py-2 text-end">${fmt.currency(it.discount)}</td>
       <td class="px-3 py-2 text-end">${it.tax_rate}%</td>
@@ -469,8 +444,8 @@ async function viewInvoice(uuid) {
         </div>
         ${itemRows ? `<table class="small border border-secondary-subtle rounded-2 overflow-hidden table table-hover align-middle mb-0">
           <thead class="bg-light"><tr>
-            <th class="text-start px-3 py-2">Description</th>
-            <th class="text-end px-3 py-2">Qty</th>
+            <th class="text-start px-3 py-2">Vehicle / Description</th>
+            <th class="text-end px-3 py-2">Days / Qty</th>
             <th class="text-end px-3 py-2">Rate</th>
             <th class="text-end px-3 py-2">Disc</th>
             <th class="text-end px-3 py-2">GST%</th>

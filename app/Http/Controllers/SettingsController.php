@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BusinessProfile;
+use App\Services\BusinessProfileLogoStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -22,7 +23,7 @@ class SettingsController extends Controller
         return response()->json($profile);
     }
 
-    public function update(Request $request)
+    public function update(Request $request, BusinessProfileLogoStorage $logoStorage)
     {
         $data = $request->validate([
             'business_name'         => 'required|string|max:255',
@@ -43,9 +44,22 @@ class SettingsController extends Controller
             'default_payment_terms' => 'nullable|string|max:255',
             'invoice_footer'        => 'nullable|string',
             'tax_config'            => 'nullable|array',
+            'logo'                  => 'sometimes|nullable|image|max:2048',
         ]);
 
+        $logo = $request->file('logo');
+        unset($data['logo']);
+
+        $logoPath = null;
+        if ($logo) {
+            $logoPath = $logoStorage->store($logo);
+        }
+
         $profile = $request->user()->businessProfile;
+        $oldLogoPath = $profile?->logo;
+        if ($logoPath !== null) {
+            $data['logo'] = $logoPath;
+        }
 
         if ($profile) {
             $profile->update($data);
@@ -53,12 +67,8 @@ class SettingsController extends Controller
             $profile = $request->user()->businessProfile()->create($data);
         }
 
-        if ($request->hasFile('logo')) {
-            $request->validate(['logo' => 'image|max:2048']);
-            if ($profile->logo) {
-                Storage::disk('public')->delete($profile->logo);
-            }
-            $profile->update(['logo' => $request->file('logo')->store('logos', 'public')]);
+        if ($logoPath !== null && is_string($oldLogoPath) && trim($oldLogoPath) !== '' && $oldLogoPath !== $logoPath) {
+            Storage::disk('public')->delete($oldLogoPath);
         }
 
         activity()->causedBy(Auth::user())->log('Business profile updated');

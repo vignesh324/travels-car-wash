@@ -1,11 +1,10 @@
 @extends('layouts.guest')
 
 @section('content')
-<div class="card shadow-lg border-0" style="width:100%;max-width:380px;border-radius:1rem">
+<div class="card w-100 col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
     <div class="card-body p-4 p-sm-5">
         <div class="text-center mb-4">
-            <div class="rounded-3 bg-primary d-inline-flex align-items-center justify-content-center text-white fw-bold mb-3"
-                 style="width:56px;height:56px;font-size:1.1rem">TC</div>
+            <div class="rounded-3 bg-primary d-inline-flex align-items-center justify-content-center text-white fw-bold mb-3 px-3 py-2">TC</div>
             <h1 class="h5 fw-bold text-dark mb-1">Travels & Car Wash</h1>
             <p class="text-muted small mb-0">Sign in to your account</p>
         </div>

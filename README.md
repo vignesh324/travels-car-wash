@@ -95,6 +95,12 @@ A complete, production-ready, mobile-first web application designed for small bu
    ```bash
    php artisan migrate:fresh --seed
    ```
+   The database seeder creates an `admin@example.com` demo account and sample
+   records for SKT Travels & Car Wash in Coimbatore, Tamil Nadu, including
+   customers, vehicles, trips, invoices, payments, expenses, and car wash
+   transactions. Use `php artisan db:seed` to add or refresh the sample records
+   without deleting existing tables. Demo records use `DEMO-` identifiers; do
+   not load them into a production database.
    *Default Login Credentials*:
    - Email: `admin@example.com`
    - Password: `password`

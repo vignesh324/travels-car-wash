@@ -1,19 +1,19 @@
 @extends('layouts.app')
 @section('title', 'Payments')
 @section('content')
-<div class="resource-page">
-  <header class="resource-page-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+<div >
+  <header class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-      <p class="resource-kicker">Cash flow</p>
-      <h2 class="resource-heading fw-bold mb-1">Payments</h2>
+      <p class="text-uppercase small fw-semibold text-secondary">Cash flow</p>
+      <h2 class="h2 fw-bold mb-1">Payments</h2>
       <p class="small text-muted mb-0" id="pmt-count" aria-live="polite"></p>
     </div>
-    <x-action-button action="payments.add" label="Record Payment" size="" class="resource-primary-action px-4 py-2 fw-semibold rounded-2" />
+    <x-action-button action="payments.add" label="Record Payment" size="" class="px-4 py-2 fw-semibold rounded-2" />
   </header>
 
-  <section class="card resource-filter-card mb-4" aria-labelledby="payment-filter-title">
+  <section class="card mb-4" aria-labelledby="payment-filter-title">
     <div class="card-body">
-      <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+      <div class="d-flex align-items-center gap-2 mb-3">
         <i class="bi bi-sliders2" aria-hidden="true"></i>
         <h3 id="payment-filter-title" class="small fw-semibold mb-0">Payment filters</h3>
       </div>
@@ -54,8 +54,8 @@
     </div>
   </section>
 
-  <div class="card resource-table-card overflow-hidden">
-    <div class="table-responsive resource-table-scroll p-2" tabindex="0" aria-label="Payments table. Scroll horizontally to reach row actions.">
+  <div class="card overflow-hidden">
+    <div class="table-responsive p-2" tabindex="0" aria-label="Payments table. Scroll horizontally to reach row actions.">
       <table id="payments-dt" class="table table-hover align-middle mb-0 small w-100">
         <thead class="table-light">
           <tr>
@@ -66,7 +66,7 @@
         </thead>
       </table>
     </div>
-    <p class="resource-scroll-hint d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
+    <p class="small text-secondary d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
   </div>
 </div>
 

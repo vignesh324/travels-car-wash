@@ -54,6 +54,58 @@ class TripTest extends TestCase
         $this->assertStringStartsWith('TR/', $res->json('trip_number'));
     }
 
+    public function test_trip_route_is_optional_and_saved(): void
+    {
+        $this->actingAs($this->user)
+            ->postJson('/api/trips', $this->payload([
+                'route' => 'School Route A',
+                'pickup_location' => 'School',
+                'drop_location' => 'Main Road',
+            ]))
+            ->assertCreated()
+            ->assertJsonFragment([
+                'route' => 'School Route A',
+                'pickup_location' => 'School',
+                'drop_location' => 'Main Road',
+            ]);
+
+        $response = $this->actingAs($this->user)
+            ->postJson('/api/trips', $this->payload())
+            ->assertCreated();
+
+        $this->assertDatabaseHas('trips', [
+            'id' => $response->json('id'),
+            'route' => null,
+        ]);
+    }
+
+    public function test_trip_form_renders_optional_route_field(): void
+    {
+        $this->actingAs($this->user)
+            ->getJson('/trips/add-edit')
+            ->assertOk()
+            ->assertJsonPath('html', fn ($html) => str_contains($html, 'id="inp_trip_route"'));
+    }
+
+    public function test_trip_edit_form_loads_existing_uuid_and_inactive_dropdown_records(): void
+    {
+        $this->vehicle->update(['is_active' => false]);
+        $this->customer->update(['is_active' => false]);
+        $trip = Trip::create(array_merge(
+            Trip::calculateAmounts($this->payload()),
+            ['trip_number' => 'TR/EDIT-UUID']
+        ));
+
+        $this->actingAs($this->user)
+            ->getJson(route('trips.addEdit', $trip->uuid))
+            ->assertOk()
+            ->assertJsonPath('trip.uuid', $trip->uuid)
+            ->assertJsonPath('html', fn ($html) => str_contains($html, 'Innova (MH12AB1234)')
+                && str_contains($html, 'Test Customer')
+                && str_contains($html, 'value="' . $this->vehicle->id . '" selected')
+                && str_contains($html, 'value="' . $this->customer->id . '" selected'));
+    }
+
     public function test_server_calculates_totals_correctly(): void
     {
         $res = $this->actingAs($this->user)->postJson('/api/trips', $this->payload([

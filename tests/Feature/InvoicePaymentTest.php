@@ -111,6 +111,87 @@ class InvoicePaymentTest extends TestCase
         $this->assertDatabaseHas('trips', ['id' => $trip->id, 'is_invoiced' => true]);
     }
 
+    public function test_trip_invoice_groups_vehicle_and_route_and_counts_trip_records_as_days(): void
+    {
+        $first = $this->makeTrip(['route' => 'School A', 'fare_amount' => 500]);
+        $second = $this->makeTrip(['route' => 'School A', 'fare_amount' => 700]);
+        $third = $this->makeTrip(['route' => 'School B', 'fare_amount' => 300]);
+
+        $response = $this->actingAs($this->user)->postJson('/api/invoices', $this->invoicePayload([
+            'trip_ids' => [$first->id, $second->id, $third->id],
+            'trip_date_from' => '2025-06-01',
+            'trip_date_to' => '2025-06-30',
+            'items' => [],
+        ]));
+
+        $response->assertCreated()->assertJsonFragment(['total_amount' => '1500.00']);
+        $this->assertDatabaseCount('invoice_items', 2);
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $response->json('id'),
+            'route' => 'School A',
+            'service_days' => 2,
+            'unit_price' => 1200,
+            'total_amount' => 1200,
+        ]);
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $response->json('id'),
+            'route' => 'School B',
+            'service_days' => 1,
+            'unit_price' => 300,
+            'total_amount' => 300,
+        ]);
+
+        $this->actingAs($this->user)
+            ->get("/api/invoices/{$response->json('uuid')}/pdf")
+            ->assertOk();
+    }
+
+    public function test_web_invoice_flow_loads_and_groups_customer_trips(): void
+    {
+        $trip = $this->makeTrip(['route' => 'School Route']);
+
+        $this->actingAs($this->user)
+            ->getJson('/invoices/eligible-trips?customer_id=' . $this->customer->id . '&date_from=2025-06-01&date_to=2025-06-30')
+            ->assertOk()
+            ->assertJsonPath('0.route', 'School Route');
+
+        $response = $this->actingAs($this->user)->postJson('/invoices', $this->invoicePayload([
+            'trip_ids' => [$trip->id],
+            'trip_date_from' => '2025-06-01',
+            'trip_date_to' => '2025-06-30',
+            'items' => [],
+        ]));
+
+        $response->assertCreated()->assertJsonFragment(['total_amount' => '500.00']);
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $response->json('id'),
+            'route' => 'School Route',
+            'service_days' => 1,
+        ]);
+    }
+
+    public function test_invoice_page_renders_regular_trip_workflow(): void
+    {
+        $this->actingAs($this->user)
+            ->get('/invoices')
+            ->assertOk()
+            ->assertSee('Create Invoice');
+    }
+
+    public function test_invoice_add_edit_endpoint_returns_complete_blade_form(): void
+    {
+        $this->actingAs($this->user)
+            ->getJson('/invoices/add-edit')
+            ->assertOk()
+            ->assertJsonPath('html', fn ($html) =>
+                str_contains($html, 'id="invoice-form"')
+                && str_contains($html, 'id="inp_inv_customer_id"')
+                && str_contains($html, 'id="inv-trip-date-from"')
+                && str_contains($html, 'id="inv-lines-wrap"')
+                && str_contains($html, 'id="inv-save-btn"')
+            );
+    }
+
     public function test_cannot_invoice_already_invoiced_trip(): void
     {
         $trip = $this->makeTrip(['is_invoiced' => true]);

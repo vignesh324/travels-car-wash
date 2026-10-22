@@ -8,10 +8,10 @@
                     <option value="{{ $customer->id }}">{{ $customer->type === 'corporate' && $customer->company_name ? $customer->company_name : $customer->name }}</option>
                 @endforeach
             </select>
-            <p id="err_pmt_customer_id" class="field-error"></p>
+            <p id="err_pmt_customer_id" class="field-error small text-danger"></p>
         </div>
         <div class="col-12 col-md-6"><label class="form-label" for="inp_pmt_payment_date">Payment Date *</label><input id="inp_pmt_payment_date" type="date" class="form-control" required></div>
-        <div class="col-12 col-md-6"><label class="form-label" for="inp_pmt_amount">Amount (₹) *</label><input id="inp_pmt_amount" type="number" min=".01" step=".01" oninput="updatePmtSummary()" class="form-control" required><p id="err_pmt_amount" class="field-error"></p></div>
+        <div class="col-12 col-md-6"><label class="form-label" for="inp_pmt_amount">Amount (₹) *</label><input id="inp_pmt_amount" type="number" min=".01" step=".01" oninput="updatePmtSummary()" class="form-control" required><p id="err_pmt_amount" class="field-error small text-danger"></p></div>
         <div class="col-12 col-md-6">
             <label class="form-label" for="inp_pmt_method">Payment Method *</label>
             <select id="inp_pmt_method" class="form-select" required>@foreach(['Cash','UPI','Bank Transfer','Card','Other'] as $method)<option>{{ $method }}</option>@endforeach</select>

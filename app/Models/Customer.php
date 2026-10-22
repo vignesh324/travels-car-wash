@@ -31,7 +31,7 @@ class Customer extends Model
             ->where(function ($query) use ($includeId) {
                 $query->where('is_active', true);
                 if ($includeId) {
-                    $query->orWhereKey($includeId);
+                    $query->orWhere('id', $includeId);
                 }
             })
             ->orderBy('name')

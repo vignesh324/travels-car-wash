@@ -1,4 +1,4 @@
-<form id="expense-form" action="{{ $formUrl }}" onsubmit="saveExpense(event)" class="p-4">
+<form id="expense-form" action="{{ $formUrl }}" data-type="{{ $type }}" onsubmit="saveExpense(event)" class="p-4">
     <input type="hidden" id="expense-id" value="{{ $expense?->id }}">
     <div class="row g-3">
         <div class="col-12 col-sm-6"><label class="form-label" for="expense-date">Date *</label><input class="form-control" type="date" id="expense-date" value="{{ $expense?->expense_date?->format('Y-m-d') ?? now()->toDateString() }}" required></div>

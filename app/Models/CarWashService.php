@@ -30,7 +30,7 @@ class CarWashService extends Model
             ->where(function ($query) use ($includeIds) {
                 $query->where('is_active', true);
                 if ($includeIds) {
-                    $query->orWhereKey($includeIds);
+                    $query->orWhereIn('id', $includeIds);
                 }
             })
             ->orderBy('sort_order')

@@ -152,6 +152,58 @@ class ExpenseTest extends TestCase
             ->assertOk()->assertJsonFragment(['source' => 'carwash', 'amount_before_tax' => '700.00']);
     }
 
+    public function test_business_expense_edit_form_loads_existing_fields_and_category(): void
+    {
+        $category = ExpenseCategory::create(['name' => 'Cleaning Supplies', 'type' => 'carwash']);
+        $expense = $this->actingAs($this->user)
+            ->postJson('/api/expenses/business', $this->bPayload([
+                'category_id' => $category->id,
+                'source' => 'carwash',
+                'description' => 'Wash detergent',
+                'vendor_name' => 'Demo Supplier',
+            ]))
+            ->assertCreated()
+            ->json();
+
+        $this->getJson(route('expenses.addEdit', ['type' => 'business', 'id' => $expense['id']]))
+            ->assertOk()
+            ->assertJsonPath('formUrl', route('expenses.business.update', $expense['id']))
+            ->assertJsonPath('html', fn ($html) => str_contains($html, 'Cleaning Supplies</option>')
+                && str_contains($html, 'value="' . $category->id . '" selected')
+                && str_contains($html, 'value="carwash" selected')
+                && str_contains($html, 'value="Wash detergent"')
+                && str_contains($html, 'value="Demo Supplier"')
+                && str_contains($html, 'value="2000.00"'));
+    }
+
+    public function test_vehicle_and_business_expenses_have_separate_pages(): void
+    {
+        $this->actingAs($this->user);
+
+        $this->get(route('expenses.vehicle.index'))
+            ->assertOk()
+            ->assertViewIs('expenses.vehicle')
+            ->assertSee('Vehicle expenses')
+            ->assertSee('id="expense-vehicle-filter"', false)
+            ->assertSee('data-type="vehicle"', false)
+            ->assertDontSee('switchExpenseTab');
+
+        $this->get(route('expenses.business.index'))
+            ->assertOk()
+            ->assertViewIs('expenses.business')
+            ->assertSee('Business expenses')
+            ->assertSee('id="expense-source-filter"', false)
+            ->assertSee('data-type="business"', false)
+            ->assertDontSee('switchExpenseTab');
+    }
+
+    public function test_legacy_expenses_page_redirects_to_vehicle_expenses(): void
+    {
+        $this->actingAs($this->user)
+            ->get(route('expenses.index', ['action' => 'new']))
+            ->assertRedirect(route('expenses.vehicle.index', ['action' => 'new']));
+    }
+
     public function test_delete_business_expense(): void
     {
         $e = $this->actingAs($this->user)->postJson('/api/expenses/business', $this->bPayload())->json();

@@ -28,7 +28,7 @@ class TripController extends Controller
 
     public function getData(Request $request)
     {
-        $query = Trip::with(['vehicle:id,name,registration_number', 'customer:id,name,company_name,type'])
+        $query = Trip::with(['vehicle:id,name,type,registration_number', 'customer:id,name,company_name,type'])
             ->when($request->vehicle_id,     fn($q, $v) => $q->where('vehicle_id', $v))
             ->when($request->customer_id,    fn($q, $v) => $q->where('customer_id', $v))
             ->when($request->trip_type,      fn($q, $v) => $q->where('trip_type', $v))
@@ -68,6 +68,7 @@ class TripController extends Controller
             'trip_type'          => 'required|in:Local,Outstation,Airport Transfer,Corporate,Other',
             'pickup_location'    => 'nullable|string|max:255',
             'drop_location'      => 'nullable|string|max:255',
+            'route'              => 'nullable|string|max:255',
             'description'        => 'nullable|string',
             'start_odometer'     => 'nullable|integer|min:0',
             'end_odometer'       => 'nullable|integer|min:0|gte:start_odometer',
@@ -115,6 +116,7 @@ class TripController extends Controller
             'trip_type'          => 'required|in:Local,Outstation,Airport Transfer,Corporate,Other',
             'pickup_location'    => 'nullable|string|max:255',
             'drop_location'      => 'nullable|string|max:255',
+            'route'              => 'nullable|string|max:255',
             'description'        => 'nullable|string',
             'start_odometer'     => 'nullable|integer|min:0',
             'end_odometer'       => 'nullable|integer|min:0|gte:start_odometer',

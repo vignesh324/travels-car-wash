@@ -1,81 +1,46 @@
 @extends('layouts.app')
 @section('title', 'Vehicles')
 
-@push('head')
-<style>
-    .vehicle-page .vehicle-count {
-        color: var(--app-muted);
-        font-size: .82rem;
-        font-variant-numeric: tabular-nums;
-    }
-    .vehicle-page .vehicle-count::before {
-        content: "";
-        display: inline-block;
-        width: .45rem;
-        height: .45rem;
-        margin: 0 .45rem .05rem 0;
-        border-radius: 50%;
-        background: var(--app-accent);
-    }
-    .vehicle-page #vehicles-dt { min-width: 840px; }
-    .vehicle-page #vehicles-dt th:last-child,
-    .vehicle-page #vehicles-dt td:last-child { min-width: 215px; }
-    .vehicle-page .vehicle-view-details dt {
-        color: var(--app-muted);
-        font-size: .7rem;
-        font-weight: 700;
-        letter-spacing: .045em;
-        text-transform: uppercase;
-    }
-    .vehicle-page .vehicle-view-details dd {
-        min-height: 1.5rem;
-        margin-bottom: 0;
-        color: var(--app-ink);
-        overflow-wrap: anywhere;
-    }
-</style>
-@endpush
-
 @section('content')
-<div class="resource-page vehicle-page">
-    <header class="resource-page-header d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-4">
+<div >
+    <header class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-4">
         <div>
-            <p class="resource-kicker mb-2"><i class="bi bi-truck-front me-1" aria-hidden="true"></i>Fleet operations</p>
-            <h2 class="resource-heading fw-bold mb-2">Vehicles</h2>
-            <p class="resource-intro small mb-0">Manage your fleet, keep vehicle details up to date, and find the right record quickly.</p>
+            <p class="text-uppercase small fw-semibold text-secondary mb-2"><i class="bi bi-truck-front me-1" aria-hidden="true"></i>Fleet operations</p>
+            <h2 class="h2 fw-bold mb-2">Vehicles</h2>
+            <p class="text-secondary small mb-0">Manage your fleet, keep vehicle details up to date, and find the right record quickly.</p>
         </div>
         <x-action-button
             action="vehicles.add"
             label="Add vehicle"
             size=""
             data-vehicle-action="add"
-            class="resource-primary-action d-inline-flex align-items-center gap-2 px-4 py-2 fw-semibold rounded-2"
+            class="d-inline-flex align-items-center gap-2 px-4 py-2 fw-semibold rounded-2"
         />
     </header>
 
-    <section class="resource-filter-card card mb-4" aria-labelledby="vehicle-filter-title">
+    <section class="card mb-4" aria-labelledby="vehicle-filter-title">
         <div class="card-body">
-            <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+            <div class="d-flex align-items-center gap-2 mb-3">
                 <i class="bi bi-sliders2 text-primary" aria-hidden="true"></i>
                 <h3 id="vehicle-filter-title" class="small fw-semibold mb-0">Vehicle filters</h3>
             </div>
             <div class="row g-3">
                 <div class="col-12 col-sm-6 col-lg-4">
-                    <label for="veh-type" class="form-label resource-filter-label">Vehicle type</label>
+                    <label for="veh-type" class="form-label">Vehicle type</label>
                     <select id="veh-type" data-ajax-table="vehicles-dt" class="form-select">
                         <option value="">All types</option>
                         <option>Car</option><option>Van</option><option>Bus</option><option>Tempo</option><option>SUV</option><option>Other</option>
                     </select>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
-                    <label for="veh-fuel" class="form-label resource-filter-label">Fuel type</label>
+                    <label for="veh-fuel" class="form-label">Fuel type</label>
                     <select id="veh-fuel" data-ajax-table="vehicles-dt" class="form-select">
                         <option value="">All fuels</option>
                         <option>Petrol</option><option>Diesel</option><option>CNG</option><option>Electric</option><option>Other</option>
                     </select>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
-                    <label for="veh-active" class="form-label resource-filter-label">Status</label>
+                    <label for="veh-active" class="form-label">Status</label>
                     <select id="veh-active" data-ajax-table="vehicles-dt" class="form-select">
                         <option value="">All statuses</option>
                         <option value="1">Active</option>
@@ -86,15 +51,15 @@
         </div>
     </section>
 
-    <section class="resource-table-card card overflow-hidden" aria-labelledby="vehicle-register-title">
+    <section class="card overflow-hidden" aria-labelledby="vehicle-register-title">
         <div class="card-header bg-white d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 px-3 px-lg-4 py-3">
             <div>
-                <p class="resource-kicker mb-1">Fleet register</p>
-                <h3 id="vehicle-register-title" class="vehicle-register-heading fs-6 fw-semibold mb-0">All vehicles</h3>
+                <p class="text-uppercase small fw-semibold text-secondary mb-1">Fleet register</p>
+                <h3 id="vehicle-register-title" class="fs-6 fw-semibold mb-0">All vehicles</h3>
             </div>
-            <p id="veh-count" class="vehicle-count mb-0" role="status" aria-live="polite" aria-atomic="true">Loading vehicle register…</p>
+            <p id="veh-count" class="small text-secondary mb-0" role="status" aria-live="polite" aria-atomic="true">Loading vehicle register…</p>
         </div>
-        <div class="table-responsive resource-table-scroll" tabindex="0" aria-label="Vehicle register. Scroll horizontally to see all columns.">
+        <div class="table-responsive" tabindex="0" aria-label="Vehicle register. Scroll horizontally to see all columns.">
             <table id="vehicles-dt" class="table table-hover align-middle mb-0 small w-100" aria-describedby="veh-count">
                 <caption class="visually-hidden">Fleet register with registration, vehicle name, type, fuel, driver, status, and available actions.</caption>
                 <thead>
@@ -110,7 +75,7 @@
                 </thead>
             </table>
         </div>
-        <p class="resource-scroll-hint d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
+        <p class="small text-secondary d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
     </section>
     @include('vehicles.partials.view-modal')
 </div>

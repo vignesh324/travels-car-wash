@@ -2,18 +2,27 @@
 @section('title', 'Reports')
 @section('content')
 <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
-    <div><p class="resource-kicker mb-2">Workspace insights</p><h2 class="resource-heading fw-bold mb-1">Reports</h2><p class="resource-intro small mb-0">Review activity and financial performance for a selected period.</p></div>
+    <div><p class="text-uppercase small fw-semibold text-secondary mb-2">Workspace insights</p><h2 class="h2 fw-bold mb-1">Reports</h2><p class="text-secondary small mb-0">Review activity and financial performance for a selected period.</p></div>
 </div>
 
-<section class="card resource-filter-card mb-3" aria-labelledby="report-filter-title">
+<section class="card mb-3" aria-labelledby="report-filter-title">
     <div class="card-body">
-        <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2 mb-3">
             <i class="bi bi-sliders2" aria-hidden="true"></i>
             <h2 id="report-filter-title" class="small fw-semibold mb-0">Report filters</h2>
         </div>
         <div class="row g-3 align-items-end">
             <div class="col-12 col-sm-6 col-md-3"><label class="form-label" for="report-date-from">From</label><input class="form-control" type="date" id="report-date-from" /></div>
             <div class="col-12 col-sm-6 col-md-3"><label class="form-label" for="report-date-to">To</label><input class="form-control" type="date" id="report-date-to" /></div>
+            <div class="col-12 col-sm-6 col-md-3 d-none" id="report-customer-filter-wrap">
+                <label class="form-label" for="report-customer">Customer</label>
+                <select class="form-select" id="report-customer">
+                    <option value="">All customers</option>
+                    @foreach($customers as $customer)
+                        <option value="{{ $customer->id }}">{{ $customer->displayName() }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div class="col-12 col-md-auto"><button class="btn btn-primary" type="button" onclick="reportPage=1;updateReportExport();loadReport()"><i class="bi bi-funnel me-1"></i>Apply filters</button></div>
         </div>
     </div>
@@ -30,7 +39,7 @@
 
 <section id="report-summary" class="row g-3 mb-3" aria-live="polite"></section>
 <section id="report-chart-wrap" class="card border-0 shadow-sm mb-3 d-none" aria-label="Report chart" >
-    <div class="card-body"><h3 class="h6 fw-semibold mb-3" id="report-chart-title">Report breakdown</h3><div class="position-relative" style="height:280px"><canvas id="report-chart" role="img" aria-labelledby="report-chart-title"></canvas></div></div>
+    <div class="card-body"><h3 class="h6 fw-semibold mb-3" id="report-chart-title">Report breakdown</h3><div class="position-relative chart-container"><canvas id="report-chart" role="img" aria-labelledby="report-chart-title"></canvas></div></div>
 </section>
 <section class="card border-0 shadow-sm overflow-hidden" aria-label="Report details" >
     <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between gap-2">
@@ -56,11 +65,17 @@ const r = id => document.getElementById(id);
 function switchReport(type) {
     activeReport = type; reportPage = 1;
     document.querySelectorAll('[data-report]').forEach(button => button.classList.toggle('active', button.dataset.report === type));
+    r('report-customer-filter-wrap').classList.toggle('d-none', type !== 'trips');
     updateReportExport();
     loadReport();
 }
 function reportDates() {
-    return {date_from:r('report-date-from').value,date_to:r('report-date-to').value,page:reportPage};
+    return {
+        date_from:r('report-date-from').value,
+        date_to:r('report-date-to').value,
+        page:reportPage,
+        ...(activeReport === 'trips' && r('report-customer').value ? {customer_id:r('report-customer').value} : {})
+    };
 }
 function updateReportExport() {
     const exports = {expenses:'expenses',trips:'trips',invoices:'invoices'};
@@ -69,12 +84,14 @@ function updateReportExport() {
         link.classList.add('d-none');
         return;
     }
-    const query = new URLSearchParams({date_from:r('report-date-from').value,date_to:r('report-date-to').value});
+    const params = {date_from:r('report-date-from').value,date_to:r('report-date-to').value};
+    if (activeReport === 'trips' && r('report-customer').value) params.customer_id = r('report-customer').value;
+    const query = new URLSearchParams(params);
     link.href = `${window.baseUrl}/reports/export/${exports[activeReport]}?${query.toString()}`;
     link.classList.remove('d-none');
 }
 function setSummary(items) {
-    r('report-summary').innerHTML = items.map((item, index) => `<div class="col-6 col-xl-3"><article class="card border-0 h-100" style="background:${['#eff6ff','#f0fdf4','#fffbeb','#fef2f2'][index%4]}"><div class="card-body py-3"><p class="small text-muted mb-1">${rEscape(item.label)}</p><p class="h5 fw-bold mb-0">${rEscape(item.value)}</p></div></article></div>`).join('');
+    r('report-summary').innerHTML = items.map((item, index) => `<div class="col-6 col-xl-3"><article class="card h-100 ${['bg-primary-subtle','bg-success-subtle','bg-warning-subtle','bg-danger-subtle'][index%4]}"><div class="card-body py-3"><p class="small text-muted mb-1">${rEscape(item.label)}</p><p class="h5 fw-bold mb-0">${rEscape(item.value)}</p></div></article></div>`).join('');
 }
 function setTable(columns, rows, emptyText = 'No records found for this period.') {
     r('report-table-head').innerHTML = `<tr>${columns.map(column => `<th scope="col" class="${column.right ? 'text-end' : ''}">${rEscape(column.label)}</th>`).join('')}</tr>`;
@@ -169,8 +186,18 @@ function renderReport(data) {
         const summary = data.summary || {};
         setSummary([{label:'Trips',value:Number(summary.count || 0).toLocaleString('en-IN')},{label:'Revenue',value:rCurrency(summary.revenue)},{label:'Collected',value:rCurrency(summary.collected)},{label:'Outstanding',value:rCurrency(summary.outstanding)}]);
         hideChart();
-        const rows = (data.trips?.data || []).map(trip => [rEscape(trip.trip_number || trip.id),fmt.date(trip.trip_date),rEscape(trip.vehicle?.registration_number || trip.vehicle?.name || '—'),rEscape(trip.customer?.company_name || trip.customer?.name || 'Walk-in'),rCurrency(trip.total_amount),`<span class="badge ${trip.status==='completed'?'text-bg-success':trip.status==='draft'?'text-bg-warning':'text-bg-danger'}">${rEscape(trip.status || '—')}</span>`]);
-        setTable([{label:'Trip #'},{label:'Date'},{label:'Vehicle'},{label:'Customer'},{label:'Amount',right:true},{label:'Status'}],rows);
+        const rows = (data.trips?.data || []).map(trip => [
+            rEscape(trip.trip_number || trip.id),
+            fmt.date(trip.trip_date),
+            rEscape(trip.customer?.company_name || trip.customer?.name || 'Walk-in'),
+            rEscape(trip.vehicle?.registration_number || trip.vehicle?.name || '—'),
+            rEscape(trip.pickup_location || '—'),
+            rEscape(trip.drop_location || '—'),
+            rEscape(trip.route || '—'),
+            rCurrency(trip.total_amount),
+            `<span class="badge ${trip.status==='completed'?'text-bg-success':trip.status==='draft'?'text-bg-warning':'text-bg-danger'}">${rEscape(trip.status || '—')}</span>`
+        ]);
+        setTable([{label:'Trip #'},{label:'Date'},{label:'Customer'},{label:'Vehicle'},{label:'Pickup'},{label:'Drop'},{label:'Route'},{label:'Amount',right:true},{label:'Status'}],rows);
         renderPagination('report-pagination',Number(data.trips?.current_page || 1),Number(data.trips?.last_page || 1),Number(data.trips?.total || 0),'function(p){reportPage=p;loadReport()}');
     } else if (activeReport === 'invoices') {
         const summary = data.summary || {};

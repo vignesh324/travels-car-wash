@@ -16,7 +16,7 @@ class Trip extends Model
 
     protected $fillable = [
         'trip_number', 'trip_date', 'vehicle_id', 'customer_id', 'trip_type',
-        'pickup_location', 'drop_location', 'description',
+        'pickup_location', 'drop_location', 'route', 'description',
         'start_odometer', 'end_odometer', 'distance_km', 'driver_name',
         'fare_amount', 'additional_charges', 'discount',
         'is_taxable', 'tax_rate', 'taxable_amount', 'tax_amount', 'total_amount',

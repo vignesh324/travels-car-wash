@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\BusinessProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,6 +19,31 @@ class WebLoginTest extends TestCase
             ->assertSee('Sign in to your account')
             ->assertSee('name="email"', false)
             ->assertSee('name="password"', false);
+    }
+
+    public function test_sidebar_uses_the_business_name_from_settings(): void
+    {
+        $user = User::factory()->create();
+        BusinessProfile::create([
+            'user_id' => $user->id,
+            'business_name' => 'North Star Travels',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard.index'))
+            ->assertOk()
+            ->assertSee('id="sidebar-biz-name" title="North Star Travels">North Star Travels', false)
+            ->assertDontSee('id="sidebar-biz-name">Travels &amp; Car Wash', false);
+    }
+
+    public function test_sidebar_falls_back_to_user_name_without_business_settings(): void
+    {
+        $user = User::factory()->create(['name' => 'Asha Patel']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard.index'))
+            ->assertOk()
+            ->assertSee('id="sidebar-biz-name" title="Asha Patel">Asha Patel', false);
     }
 
     public function test_valid_credentials_sign_in_and_render_the_dashboard(): void
@@ -40,11 +66,18 @@ class WebLoginTest extends TestCase
         $this->actingAs(User::factory()->create());
 
         foreach ([
+            'dashboard.index',
             'trips.index',
+            'vehicles.index',
+            'customers.index',
+            'expenses.vehicle.index',
+            'expenses.business.index',
             'invoices.index',
             'payments.index',
-            'expenses.index',
             'car-wash.index',
+            'reports.index',
+            'activity-logs.index',
+            'settings.index',
         ] as $routeName) {
             $this->get(route($routeName))->assertOk();
         }

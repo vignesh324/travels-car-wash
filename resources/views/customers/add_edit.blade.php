@@ -12,12 +12,12 @@
         <div class="col-12 col-md-6" id="cust-corp-wrap">
             <label for="inp_cust_company_name" class="form-label">Company Name</label>
             <input id="inp_cust_company_name" name="company_name" value="{{ $customer?->company_name }}" class="form-control">
-            <p id="err_cust_company_name" class="field-error"></p>
+            <p id="err_cust_company_name" class="field-error small text-danger"></p>
         </div>
         <div class="col-12 col-md-6">
             <label for="inp_cust_name" class="form-label" id="cust-name-label">Full Name *</label>
             <input id="inp_cust_name" name="name" value="{{ $customer?->name }}" class="form-control" required>
-            <p id="err_cust_name" class="field-error"></p>
+            <p id="err_cust_name" class="field-error small text-danger"></p>
         </div>
         <div class="col-12 col-md-6" id="cust-contact-wrap">
             <label for="inp_cust_contact_person" class="form-label">Contact Person</label>

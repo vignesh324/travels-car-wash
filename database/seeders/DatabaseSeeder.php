@@ -22,10 +22,17 @@ class DatabaseSeeder extends Seeder
         $this->call(ExpenseCategorySeeder::class);
         $this->call(CarWashServiceSeeder::class);
 
-        BusinessProfile::firstOrCreate(
+        BusinessProfile::updateOrCreate(
             ['user_id' => $user->id],
             [
-                'business_name' => 'Travels & Car Wash',
+                'business_name' => 'SKT Travels & Car Wash',
+                'address' => 'No. 12, Demo Market Road, Gandhipuram, Coimbatore, Tamil Nadu 641012',
+                'phone' => '+91 90000 00000',
+                'email' => 'admin@example.com',
+                'state' => 'Tamil Nadu',
+                'state_code' => '33',
+                'upi_id' => 'skttravels@example',
+                'default_payment_terms' => 'Payment due within 30 days',
                 'invoice_prefix' => 'INV',
                 'receipt_prefix' => 'RCP',
                 'currency' => 'INR',
@@ -35,5 +42,7 @@ class DatabaseSeeder extends Seeder
                 'invoice_number_next' => 1,
             ]
         );
+
+        // $this->call(DemoDataSeeder::class);
     }
 }

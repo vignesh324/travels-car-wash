@@ -9,7 +9,7 @@
         </div>
         <div class="d-flex justify-content-between align-items-center mb-2"><h4 class="small text-uppercase fw-semibold text-muted mb-0">Services</h4><button class="btn btn-sm btn-outline-secondary" type="button" onclick="addWashItem()"><i class="bi bi-plus me-1"></i>Add line</button></div>
         <div class="table-responsive border rounded-3">
-            <table class="table table-sm align-middle mb-0 table-hover"><thead class="table-light"><tr><th>Service</th><th style="width:6rem">Qty</th><th style="width:9rem">Unit price</th><th style="width:8rem">Discount</th><th style="width:7rem">Tax %</th><th class="text-end">Line total</th><th></th></tr></thead><tbody id="wash-item-rows"></tbody></table>
+            <table class="table table-sm align-middle mb-0 table-hover"><thead class="table-light"><tr><th>Service</th><th>Qty</th><th>Unit price</th><th>Discount</th><th>Tax %</th><th class="text-end">Line total</th><th></th></tr></thead><tbody id="wash-item-rows"></tbody></table>
         </div>
         <div class="row g-3 mt-1">
             <div class="col-12 col-md-4"><label class="form-label" for="wash-amount-paid">Amount paid</label><input class="form-control" type="number" min="0" step=".01" id="wash-amount-paid" value="{{ $record?->amount_paid ?? 0 }}"></div>

@@ -113,6 +113,42 @@ class ReportsActivityLogTest extends TestCase
         $this->assertEquals(1, $res->json('summary.count'));
     }
 
+    public function test_trips_report_can_filter_by_customer_and_includes_route_locations(): void
+    {
+        $this->makeTrip([
+            'trip_date' => '2025-06-01',
+            'route' => 'School Route',
+            'pickup_location' => 'School',
+            'drop_location' => 'Town',
+        ]);
+        $otherCustomer = Customer::create(['type' => 'individual', 'name' => 'Other Customer']);
+        $this->makeTrip(['trip_date' => '2025-06-02', 'customer_id' => $otherCustomer->id]);
+
+        $response = $this->actingAs($this->user)->getJson(
+            "/api/reports/trips?date_from=2025-06-01&date_to=2025-06-30&customer_id={$this->customer->id}"
+        );
+
+        $response->assertOk()
+            ->assertJsonPath('summary.count', 1)
+            ->assertJsonPath('trips.data.0.route', 'School Route')
+            ->assertJsonPath('trips.data.0.pickup_location', 'School')
+            ->assertJsonPath('trips.data.0.drop_location', 'Town');
+
+        $this->actingAs($this->user)
+            ->getJson("/reports/trips?date_from=2025-06-01&date_to=2025-06-30&customer_id={$this->customer->id}")
+            ->assertOk()
+            ->assertJsonPath('summary.count', 1)
+            ->assertJsonPath('trips.data.0.route', 'School Route');
+    }
+
+    public function test_reports_page_renders_customer_filter(): void
+    {
+        $this->actingAs($this->user)
+            ->get('/reports')
+            ->assertOk()
+            ->assertSee('report-customer');
+    }
+
     public function test_invoices_report_structure(): void
     {
         $this->actingAs($this->user)

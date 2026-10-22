@@ -1,19 +1,19 @@
 @extends('layouts.app')
 @section('title', 'Trips')
 @section('content')
-<div class="container-fluid px-0 resource-page">
-  <header class="resource-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+<div class="container-fluid px-0">
+  <header class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
     <div>
-      <p class="resource-kicker mb-2">Trip operations</p>
-      <h2 class="resource-heading fw-bold mb-1">Trips</h2>
+      <p class="text-uppercase small fw-semibold text-secondary mb-2">Trip operations</p>
+      <h2 class="h2 fw-bold mb-1">Trips</h2>
       <p class="small text-muted mb-0 mt-1" id="trip-count" aria-live="polite"></p>
     </div>
-    <x-action-button action="trips.add" label="Add Trip" class="resource-primary-action" />
+    <x-action-button action="trips.add" label="Add Trip"  />
   </header>
 
-  <section class="card resource-filter-card mb-3" aria-labelledby="trip-filters-heading">
+  <section class="card mb-3" aria-labelledby="trip-filters-heading">
     <div class="card-body">
-      <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+      <div class="d-flex align-items-center gap-2 mb-3">
         <i class="bi bi-sliders2" aria-hidden="true"></i>
         <h3 class="small fw-semibold mb-0" id="trip-filters-heading">Trip filters</h3>
       </div>
@@ -64,8 +64,8 @@
     </div>
   </section>
 
-  <section class="card resource-table-card" aria-label="Trip list">
-    <div class="table-responsive resource-table-scroll p-2">
+  <section class="card" aria-label="Trip list">
+    <div class="table-responsive p-2">
       <table id="trips-dt" class="table table-hover align-middle mb-0 small w-100">
         <thead class="table-light">
           <tr>
@@ -74,6 +74,7 @@
             <th>Vehicle</th>
             <th>Customer</th>
             <th>Type</th>
+            <th>Route</th>
             <th class="text-end">Amount</th>
             <th>Status</th>
             <th class="text-end no-sort">Actions</th>
@@ -81,7 +82,7 @@
         </thead>
       </table>
     </div>
-    <p class="resource-scroll-hint d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
+    <p class="small text-secondary d-md-none mb-0 px-3 pb-3"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Swipe or scroll horizontally to see all columns</p>
   </section>
 </div>
 
@@ -129,6 +130,7 @@ function initTripsTable() {
       { data: 'vehicle', orderable: false, searchable: false, render: v => v ? tripHtml(v.name) : '—' },
       { data: 'customer', orderable: false, searchable: false, render: v => v ? tripHtml(v.company_name || v.name) : '<span class="fst-italic text-muted">Walk-in</span>' },
       { data: 'trip_type' },
+      { data: 'route', render: v => tripHtml(v || '—') },
       { data: 'total_amount', className: 'text-end', render: v => `<span class="fw-semibold">${fmt.currency(v)}</span>` },
       { data: 'status', render: (v, _, row) =>
           badge(v, window.tripStatusColor(v)) + ' ' + badge(row.payment_status, window.paymentStatusColor(row.payment_status)) },
@@ -203,6 +205,7 @@ async function saveTrip() {
     customer_id:         parseInt(document.getElementById('inp_trip_customer_id').value) || null,
     pickup_location:     document.getElementById('inp_trip_pickup_location').value || null,
     drop_location:       document.getElementById('inp_trip_drop_location').value || null,
+    route:               document.getElementById('inp_trip_route').value || null,
     driver_name:         document.getElementById('inp_trip_driver_name').value || null,
     status:              document.getElementById('inp_trip_status').value,
     start_odometer:      parseFloat(document.getElementById('inp_trip_start_odometer').value) || null,
@@ -268,6 +271,7 @@ async function viewTrip(uuid) {
           <div><span class="text-muted">Status:</span> <span class="ml-1">${badge(tripHtml(t.status), window.tripStatusColor(t.status))}</span></div>
           ${t.pickup_location ? `<div><span class="text-muted">Pickup:</span> <span class="fw-medium ml-1">${tripHtml(t.pickup_location)}</span></div>` : ''}
           ${t.drop_location   ? `<div><span class="text-muted">Drop:</span> <span class="fw-medium ml-1">${tripHtml(t.drop_location)}</span></div>` : ''}
+          ${t.route           ? `<div><span class="text-muted">Route:</span> <span class="fw-medium ml-1">${tripHtml(t.route)}</span></div>` : ''}
           ${t.start_odometer != null ? `<div><span class="text-muted">Start Odo:</span> <span class="fw-medium ml-1">${t.start_odometer} km</span></div>` : ''}
           ${t.end_odometer   != null ? `<div><span class="text-muted">End Odo:</span> <span class="fw-medium ml-1">${t.end_odometer} km</span></div>` : ''}
           ${t.distance_km    != null ? `<div><span class="text-muted">Distance:</span> <span class="fw-medium ml-1">${t.distance_km} km</span></div>` : ''}

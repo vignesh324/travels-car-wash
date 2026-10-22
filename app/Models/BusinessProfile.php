@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class BusinessProfile extends Model
 {
@@ -22,6 +23,17 @@ class BusinessProfile extends Model
         'tax_config' => 'array',
         'invoice_number_reset' => 'boolean',
     ];
+
+    protected $appends = ['logo_url'];
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (! is_string($this->logo) || trim($this->logo) === '') {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->logo);
+    }
 
     public function user()
     {

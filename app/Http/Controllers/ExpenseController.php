@@ -26,7 +26,8 @@ class ExpenseController extends Controller
             ? ($expense ? route('expenses.vehicle.update', $expense->id) : route('expenses.vehicle.store'))
             : ($expense ? route('expenses.business.update', $expense->id) : route('expenses.business.store'));
         $vehicles = Vehicle::dropdownOptions($isVehicle ? $expense?->vehicle_id : null);
-        $categories = ExpenseCategory::dropdownOptions($type, $expense?->category_id);
+        $categoryTypes = $isVehicle ? 'vehicle' : ['general', 'carwash'];
+        $categories = ExpenseCategory::dropdownOptions($categoryTypes, $expense?->category_id);
         $html = view('expenses.add_edit', compact('type', 'expense', 'formUrl', 'vehicles', 'categories'))->render();
 
         return response()->json(compact('pageTitle', 'formUrl', 'html', 'type', 'expense', 'vehicles', 'categories'));
@@ -103,11 +104,22 @@ class ExpenseController extends Controller
             return response()->json(ExpenseCategory::dropdownOptions($request->input('type')));
         }
 
-        $vehicles = Vehicle::dropdownOptions();
-        $vehicleCategories = ExpenseCategory::dropdownOptions('vehicle');
-        $businessCategories = ExpenseCategory::dropdownOptions('business');
+        return redirect()->route('expenses.vehicle.index', $request->query());
+    }
 
-        return view('expenses.index', compact('vehicles', 'vehicleCategories', 'businessCategories'));
+    public function vehicleIndex()
+    {
+        $vehicles = Vehicle::dropdownOptions();
+        $categories = ExpenseCategory::dropdownOptions('vehicle');
+
+        return view('expenses.vehicle', compact('vehicles', 'categories'));
+    }
+
+    public function businessIndex()
+    {
+        $categories = ExpenseCategory::dropdownOptions(['general', 'carwash']);
+
+        return view('expenses.business', compact('categories'));
     }
 
     // ── Vehicle Expenses ──────────────────────────────────────────────────────

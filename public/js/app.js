@@ -3,7 +3,7 @@ window.baseUrl = window.appConfig.baseUrl;
 function syncSidebarAccessibility(isOpen) {
     const sidebar = document.getElementById('sidebar');
     const isMobile = window.matchMedia('(max-width: 991.98px)').matches;
-    const isHidden = isMobile && !isOpen;
+    const isHidden = isMobile ? !isOpen : sidebar.classList.contains('collapsed');
     const focusableElements = sidebar.querySelectorAll(
         'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [contenteditable], [tabindex]'
     );
@@ -37,22 +37,49 @@ function syncSidebarAccessibility(isOpen) {
 
 function openSidebar() {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.add('show');
-    document.getElementById('sidebar-backdrop').classList.add('show');
+    const isMobile = window.matchMedia('(max-width: 991.98px)').matches;
+    if (isMobile) {
+        sidebar.classList.add('show');
+        document.getElementById('sidebar-backdrop').classList.add('show');
+    } else {
+        sidebar.classList.remove('collapsed');
+    }
     syncSidebarAccessibility(true);
     const toggle = document.getElementById('sidebar-toggle');
     toggle.setAttribute('aria-expanded', 'true');
-    sidebar.querySelector('.sidebar-close').focus();
+    if (isMobile) sidebar.querySelector('.sidebar-close').focus();
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const isMobile = window.matchMedia('(max-width: 991.98px)').matches;
+
+    if (isMobile) {
+        if (sidebar.classList.contains('show')) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+        return;
+    }
+
+    sidebar.classList.toggle('collapsed');
+    const isOpen = !sidebar.classList.contains('collapsed');
+    syncSidebarAccessibility(isOpen);
+    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', String(isOpen));
 }
 
 function closeSidebar() {
     const sidebar = document.getElementById('sidebar');
+    const isMobile = window.matchMedia('(max-width: 991.98px)').matches;
+    if (!isMobile) return;
+
     sidebar.classList.remove('show');
     document.getElementById('sidebar-backdrop').classList.remove('show');
     syncSidebarAccessibility(false);
     const toggle = document.getElementById('sidebar-toggle');
     toggle.setAttribute('aria-expanded', 'false');
-    if (window.matchMedia('(max-width: 991.98px)').matches) toggle.focus();
+    toggle.focus();
 }
 
 function positionQuickDropdown(dropdown, toggle) {
@@ -70,9 +97,9 @@ function positionQuickDropdown(dropdown, toggle) {
 function toggleQuickMenu() {
     const dropdown = document.getElementById('quick-dropdown');
     const toggle = document.getElementById('quick-action-toggle');
-    const isOpening = dropdown.style.display === 'none';
+    const isOpening = !dropdown.classList.contains('show');
 
-    dropdown.style.display = isOpening ? 'block' : 'none';
+    dropdown.classList.toggle('show', isOpening);
     toggle.setAttribute('aria-expanded', String(isOpening));
     if (isOpening) {
         positionQuickDropdown(dropdown, toggle);
@@ -85,13 +112,14 @@ function toggleQuickMenu() {
 
 window.openSidebar = openSidebar;
 window.closeSidebar = closeSidebar;
+window.toggleSidebar = toggleSidebar;
 window.toggleQuickMenu = toggleQuickMenu;
 
 document.addEventListener('click', event => {
     const menu = document.getElementById('quick-dropdown');
     const toggle = document.getElementById('quick-action-toggle');
-    if (menu.style.display !== 'none' && !event.target.closest('#quick-action-menu')) {
-        menu.style.display = 'none';
+    if (menu.classList.contains('show') && !event.target.closest('#quick-action-menu')) {
+        menu.classList.remove('show');
         toggle.setAttribute('aria-expanded', 'false');
         menu.style.removeProperty('--quick-dropdown-top');
         menu.style.removeProperty('--quick-dropdown-right');
@@ -101,10 +129,19 @@ document.addEventListener('click', event => {
 
 window.addEventListener('resize', () => {
     const sidebar = document.getElementById('sidebar');
-    syncSidebarAccessibility(sidebar.classList.contains('show'));
+    const isMobile = window.matchMedia('(max-width: 991.98px)').matches;
+    if (!isMobile) {
+        sidebar.classList.remove('show');
+        document.getElementById('sidebar-backdrop').classList.remove('show');
+    }
+    const isOpen = isMobile
+        ? sidebar.classList.contains('show')
+        : !sidebar.classList.contains('collapsed');
+    syncSidebarAccessibility(isOpen);
+    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', String(isOpen));
 
     const dropdown = document.getElementById('quick-dropdown');
-    if (dropdown.style.display === 'none') return;
+    if (!dropdown.classList.contains('show')) return;
 
     positionQuickDropdown(dropdown, document.getElementById('quick-action-toggle'));
 });
@@ -114,8 +151,8 @@ document.addEventListener('keydown', event => {
 
     const menu = document.getElementById('quick-dropdown');
     const toggle = document.getElementById('quick-action-toggle');
-    if (menu.style.display !== 'none') {
-        menu.style.display = 'none';
+    if (menu.classList.contains('show')) {
+        menu.classList.remove('show');
         toggle.setAttribute('aria-expanded', 'false');
         menu.style.removeProperty('--quick-dropdown-top');
         menu.style.removeProperty('--quick-dropdown-right');
@@ -193,7 +230,7 @@ window.badge = function(text, color) {
         orange: 'text-bg-warning',
         cyan: 'text-bg-info',
     };
-    return `<span class="badge badge-status ${colors[color] || colors.gray}">${text}</span>`;
+    return `<span class="badge ${colors[color] || colors.gray}">${text}</span>`;
 };
 
 window.paymentStatusColor = status => status === 'paid' ? 'green' : status === 'partial' ? 'yellow' : status === 'unpaid' ? 'red' : 'gray';
@@ -279,7 +316,7 @@ window.renderPagination = function(containerId, page, totalPages, total, onPage)
         return;
     }
     container.innerHTML = `
-        <div class="px-3 py-2 border-top d-flex align-items-center justify-content-between" style="font-size:.8rem">
+        <div class="px-3 py-2 border-top d-flex align-items-center justify-content-between small">
             <span class="text-muted">Page ${page} of ${totalPages} <span class="text-secondary">(${total} total)</span></span>
             <div class="d-flex gap-1">
                 <button onclick="(${onPage})(${page - 1})" ${page === 1 ? 'disabled' : ''} class="btn btn-outline-secondary btn-sm">← Prev</button>
@@ -391,7 +428,7 @@ $(document).ready(function() {
     document.addEventListener('click', function(event) {
         const menu = document.getElementById('quick-action-menu');
         const dropdown = document.getElementById('quick-dropdown');
-        if (menu && !menu.contains(event.target) && dropdown) dropdown.style.display = 'none';
+        if (menu && !menu.contains(event.target) && dropdown) dropdown.classList.remove('show');
     });
 
     const filterTimeouts = new Map();

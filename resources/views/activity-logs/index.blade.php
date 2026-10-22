@@ -1,15 +1,15 @@
 @extends('layouts.app')
 @section('title', 'Activity Logs')
 @section('content')
-<div class="resource-page">
-<header class="resource-page-header mb-4">
-    <p class="resource-kicker">Workspace history</p>
-    <h2 class="resource-heading fw-bold mb-1">Activity Logs</h2>
-    <p class="resource-intro text-muted small mb-0">Review changes and actions recorded across your workspace.</p>
+<div >
+<header class="mb-4">
+    <p class="text-uppercase small fw-semibold text-secondary">Workspace history</p>
+    <h2 class="h2 fw-bold mb-1">Activity Logs</h2>
+    <p class="text-secondary text-muted small mb-0">Review changes and actions recorded across your workspace.</p>
 </header>
-<section class="card resource-filter-card mb-3" aria-label="Activity log filters" >
+<section class="card mb-3" aria-label="Activity log filters" >
     <div class="card-body">
-        <div class="resource-filter-heading d-flex align-items-center gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2 mb-3">
             <i class="bi bi-sliders2" aria-hidden="true"></i>
             <h2 class="small fw-semibold mb-0">Activity filters</h2>
         </div>
@@ -23,11 +23,11 @@
         </div>
     </div>
 </section>
-<section class="card resource-table-card overflow-hidden" aria-label="Activity log entries" >
+<section class="card overflow-hidden" aria-label="Activity log entries" >
     <div class="d-flex align-items-center justify-content-between gap-2 px-3 py-3 border-bottom">
         <h3 class="h6 fw-semibold mb-0">Recent activity</h3><span id="activity-count" class="small text-muted"></span>
     </div>
-    <div class="table-responsive resource-table-scroll"><table id="activity-logs-dt" class="table table-hover align-middle mb-0 w-100">
+    <div class="table-responsive"><table id="activity-logs-dt" class="table table-hover align-middle mb-0 w-100">
         <thead class="table-light"><tr><th scope="col">Action</th><th scope="col">User</th><th scope="col">Record</th><th scope="col">Details</th><th scope="col">Date and time</th></tr></thead>
         <tbody></tbody>
     </table></div>

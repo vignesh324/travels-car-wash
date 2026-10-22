@@ -102,21 +102,19 @@ class ReportsController extends Controller
     {
         [$from, $to] = $this->dateRange($request);
 
-        $query = Trip::whereBetween('trip_date', [$from, $to])
-            ->with(['vehicle:id,name,registration_number', 'customer:id,name,company_name,type'])
+        $applyFilters = fn ($query) => $query
             ->when($request->vehicle_id, fn($q, $v) => $q->where('vehicle_id', $v))
             ->when($request->customer_id, fn($q, $v) => $q->where('customer_id', $v))
             ->when($request->trip_type, fn($q, $v) => $q->where('trip_type', $v))
             ->when($request->status, fn($q, $v) => $q->where('status', $v))
-            ->when($request->payment_status, fn($q, $v) => $q->where('payment_status', $v))
-            ->orderByDesc('trip_date');
+            ->when($request->payment_status, fn($q, $v) => $q->where('payment_status', $v));
 
-        $trips = $query->paginate(50);
+        $trips = $applyFilters(
+            Trip::whereBetween('trip_date', [$from, $to])
+                ->with(['vehicle:id,name,type,registration_number', 'customer:id,name,company_name,type'])
+        )->orderByDesc('trip_date')->paginate(50);
 
-        $summary = Trip::whereBetween('trip_date', [$from, $to])
-            ->when($request->vehicle_id, fn($q, $v) => $q->where('vehicle_id', $v))
-            ->when($request->customer_id, fn($q, $v) => $q->where('customer_id', $v))
-            ->when($request->status, fn($q, $v) => $q->where('status', $v))
+        $summary = $applyFilters(Trip::whereBetween('trip_date', [$from, $to]))
             ->selectRaw('COUNT(*) as count, SUM(total_amount) as revenue, SUM(amount_received) as collected, SUM(balance_due) as outstanding')
             ->first();
 
@@ -195,7 +193,8 @@ class ReportsController extends Controller
         [$from, $to] = $this->dateRange($request);
 
         $trips = Trip::whereBetween('trip_date', [$from, $to])
-            ->with(['vehicle:id,name,registration_number', 'customer:id,name,company_name'])
+            ->with(['vehicle:id,name,registration_number', 'customer:id,name,company_name,type'])
+            ->when($request->customer_id, fn($q, $v) => $q->where('customer_id', $v))
             ->when($request->vehicle_id, fn($q, $v) => $q->where('vehicle_id', $v))
             ->when($request->status, fn($q, $v) => $q->where('status', $v))
             ->orderByDesc('trip_date')
@@ -205,17 +204,18 @@ class ReportsController extends Controller
             public function __construct(private $data) {}
             public function collection(): Enumerable { return $this->data; }
             public function headings(): array {
-                return ['Trip #', 'Date', 'Vehicle', 'Customer', 'Type', 'Pickup', 'Drop', 'Fare', 'Total', 'Received', 'Balance', 'Status', 'Payment Status'];
+                return ['Trip #', 'Date', 'Vehicle', 'Customer', 'Type', 'Pickup', 'Drop', 'Route', 'Fare', 'Total', 'Received', 'Balance', 'Status', 'Payment Status'];
             }
             public function map($row): array {
                 return [
                     $row->trip_number,
                     $row->trip_date->format('d-m-Y'),
                     $row->vehicle?->name ?? '',
-                    $row->customer?->name ?? $row->customer?->company_name ?? 'Walk-in',
+                    $row->customer?->displayName() ?? 'Walk-in',
                     $row->trip_type,
                     $row->pickup_location ?? '',
                     $row->drop_location ?? '',
+                    $row->route ?? '',
                     $row->fare_amount,
                     $row->total_amount,
                     $row->amount_received,

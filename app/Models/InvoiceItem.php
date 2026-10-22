@@ -10,7 +10,8 @@ class InvoiceItem extends Model
     use HasUuid;
 
     protected $fillable = [
-        'invoice_id', 'description', 'source', 'quantity', 'unit_price', 'discount',
+        'invoice_id', 'description', 'source', 'vehicle_type', 'route', 'service_days',
+        'quantity', 'unit_price', 'discount',
         'taxable_amount', 'tax_rate', 'cgst_rate', 'sgst_rate', 'igst_rate',
         'tax_amount', 'total_amount', 'sort_order',
     ];

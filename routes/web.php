@@ -76,6 +76,8 @@ Route::middleware('auth')->group(function () {
     Route::get('expenses/getData',        [ExpenseController::class, 'getData'])->name('expenses.getData');
     Route::get('expenses/getVehicleData',  [ExpenseController::class, 'getVehicleData'])->name('expenses.getVehicleData');
     Route::get('expenses/getBusinessData', [ExpenseController::class, 'getBusinessData'])->name('expenses.getBusinessData');
+    Route::get('expenses/vehicle', [ExpenseController::class, 'vehicleIndex'])->name('expenses.vehicle.index');
+    Route::get('expenses/business', [ExpenseController::class, 'businessIndex'])->name('expenses.business.index');
     Route::get('expenses',                                          [ExpenseController::class, 'index'])->name('expenses.index');
     // Vehicle expenses
     Route::post('expenses/vehicle',                                 [ExpenseController::class, 'storeVehicle'])->name('expenses.vehicle.store');
@@ -94,6 +96,7 @@ Route::middleware('auth')->group(function () {
     // Invoices
     Route::get('invoices/add-edit/{uuid?}', [InvoiceController::class, 'addEdit'])->name('invoices.addEdit');
     Route::get('invoices/getData', [InvoiceController::class, 'getData'])->name('invoices.getData');
+    Route::get('invoices/eligible-trips', [InvoiceController::class, 'eligibleTrips'])->name('invoices.eligible-trips');
     Route::resource('invoices', InvoiceController::class)->except(['destroy']);
     Route::post('invoices/{invoice}/cancel',   [InvoiceController::class, 'cancel'])->name('invoices.cancel');
     Route::get('invoices/{invoice}/pdf',       [InvoiceController::class, 'pdf'])->name('invoices.pdf');

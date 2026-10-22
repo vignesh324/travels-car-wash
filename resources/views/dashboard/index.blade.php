@@ -8,10 +8,10 @@
 </div>
 
 {{-- Today --}}
-<p class="text-uppercase fw-semibold text-muted mb-2" style="font-size:.7rem;letter-spacing:.05em">Today</p>
+<p class="small text-uppercase fw-semibold text-muted mb-2">Today</p>
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
-        <div class="card border-0 h-100" style="background:#eff6ff">
+        <div class="card h-100 bg-primary-subtle">
             <div class="card-body py-3">
                 <p class="small text-primary mb-1 opacity-75">Trips Today</p>
                 <p class="h5 fw-bold text-primary mb-0">{{ $summary['today']['trip_count'] }}</p>
@@ -19,7 +19,7 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 h-100" style="background:#f0fdf4">
+        <div class="card h-100 bg-success-subtle">
             <div class="card-body py-3">
                 <p class="small text-success mb-1 opacity-75">Trip Revenue</p>
                 <p class="h5 fw-bold text-success mb-0">₹{{ number_format($summary['today']['trip_revenue'], 2) }}</p>
@@ -27,7 +27,7 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 h-100" style="background:#f0fdf4">
+        <div class="card h-100 bg-success-subtle">
             <div class="card-body py-3">
                 <p class="small text-success mb-1 opacity-75">Collected</p>
                 <p class="h5 fw-bold text-success mb-0">₹{{ number_format($summary['today']['collected'], 2) }}</p>
@@ -35,7 +35,7 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 h-100" style="background:#fef2f2">
+        <div class="card h-100 bg-danger-subtle">
             <div class="card-body py-3">
                 <p class="small text-danger mb-1 opacity-75">Expenses</p>
                 <p class="h5 fw-bold text-danger mb-0">₹{{ number_format($summary['today']['expenses'], 2) }}</p>
@@ -45,10 +45,10 @@
 </div>
 
 {{-- This Month --}}
-<p class="text-uppercase fw-semibold text-muted mb-2" style="font-size:.7rem;letter-spacing:.05em">This Month</p>
+<p class="small text-uppercase fw-semibold text-muted mb-2">This Month</p>
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
-        <div class="card border-0 h-100" style="background:#eff6ff">
+        <div class="card h-100 bg-primary-subtle">
             <div class="card-body py-3">
                 <p class="small text-primary mb-1 opacity-75">Revenue</p>
                 <p class="h5 fw-bold text-primary mb-0">₹{{ number_format($summary['month']['revenue'], 2) }}</p>
@@ -56,7 +56,7 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 h-100" style="background:#f0fdf4">
+        <div class="card h-100 bg-success-subtle">
             <div class="card-body py-3">
                 <p class="small text-success mb-1 opacity-75">Collections</p>
                 <p class="h5 fw-bold text-success mb-0">₹{{ number_format($summary['month']['collected'], 2) }}</p>
@@ -64,7 +64,7 @@
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card border-0 h-100" style="background:#fef2f2">
+        <div class="card h-100 bg-danger-subtle">
             <div class="card-body py-3">
                 <p class="small text-danger mb-1 opacity-75">Expenses</p>
                 <p class="h5 fw-bold text-danger mb-0">₹{{ number_format($summary['month']['expenses'], 2) }}</p>
@@ -73,11 +73,11 @@
     </div>
     @php $profit = $summary['month']['estimated_profit']; @endphp
     <div class="col-6 col-lg-3">
-        <div class="card border-0 h-100" style="background:{{ $profit >= 0 ? '#f0fdf4' : '#fef2f2' }}">
+        <div class="card h-100 {{ $profit >= 0 ? 'bg-success-subtle' : 'bg-danger-subtle' }}">
             <div class="card-body py-3">
                 <p class="small mb-1 opacity-75 {{ $profit >= 0 ? 'text-success' : 'text-danger' }}">Est. Profit</p>
                 <p class="h5 fw-bold mb-0 {{ $profit >= 0 ? 'text-success' : 'text-danger' }}">₹{{ number_format($profit, 2) }}</p>
-                <p class="mb-0 opacity-50" style="font-size:.7rem">Operating expenses only</p>
+                <p class="small mb-0 text-body-secondary">Operating expenses only</p>
             </div>
         </div>
     </div>
@@ -86,7 +86,7 @@
 {{-- Outstanding + Alerts --}}
 <div class="row g-3 mb-4">
     <div class="col-sm-6">
-        <div class="card border-warning h-100" style="background:#fffbeb">
+        <div class="card border-warning h-100 bg-warning-subtle">
             <div class="card-body py-3">
                 <p class="small text-warning mb-1 fw-medium">Outstanding Balance</p>
                 <p class="h5 fw-bold text-warning mb-1">₹{{ number_format($summary['outstanding_balance'], 2) }}</p>
@@ -95,8 +95,7 @@
         </div>
     </div>
     <div class="col-sm-6">
-        <div class="card h-100 {{ $summary['expiry_alerts'] > 0 ? 'border-danger' : 'border-0' }}"
-             style="{{ $summary['expiry_alerts'] > 0 ? 'background:#fef2f2' : 'background:#f9fafb' }}">
+        <div class="card h-100 {{ $summary['expiry_alerts'] > 0 ? 'border-danger bg-danger-subtle' : 'bg-body-secondary' }}">
             <div class="card-body py-3">
                 <p class="small text-muted mb-1 fw-medium">Document Expiry Alerts</p>
                 <p class="h5 fw-bold mb-1 {{ $summary['expiry_alerts'] > 0 ? 'text-danger' : 'text-secondary' }}">
@@ -112,8 +111,8 @@
 @if($dailyRevenue->isNotEmpty())
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
-        <p class="fw-semibold text-dark mb-3" id="daily-chart-title" style="font-size:.9rem">Daily Revenue — Last 30 Days</p>
-        <div class="position-relative" style="height:280px">
+        <p class="fw-semibold text-dark small mb-3" id="daily-chart-title">Daily Revenue — Last 30 Days</p>
+        <div class="position-relative chart-container">
             <canvas id="daily-chart" role="img" aria-labelledby="daily-chart-title"></canvas>
         </div>
     </div>
@@ -127,8 +126,8 @@
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <p class="fw-semibold text-dark mb-3" id="vehicle-chart-title" style="font-size:.9rem">Vehicle Revenue — This Month</p>
-                <div class="position-relative" style="height:280px">
+                <p class="fw-semibold text-dark small mb-3" id="vehicle-chart-title">Vehicle Revenue — This Month</p>
+                <div class="position-relative chart-container">
                     <canvas id="vehicle-chart" role="img" aria-labelledby="vehicle-chart-title"></canvas>
                 </div>
             </div>
@@ -139,8 +138,8 @@
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <p class="fw-semibold text-dark mb-3" id="expense-chart-title" style="font-size:.9rem">Expense Breakdown — This Month</p>
-                <div class="position-relative" style="height:280px">
+                <p class="fw-semibold text-dark small mb-3" id="expense-chart-title">Expense Breakdown — This Month</p>
+                <div class="position-relative chart-container">
                     <canvas id="expense-chart" role="img" aria-labelledby="expense-chart-title"></canvas>
                 </div>
             </div>
@@ -154,21 +153,21 @@
 @if($recentTrips->isNotEmpty())
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white border-bottom py-2 px-3">
-        <p class="fw-semibold mb-0" style="font-size:.9rem">Recent Trips</p>
+        <p class="fw-semibold small mb-0">Recent Trips</p>
     </div>
     <ul class="list-group list-group-flush">
         @foreach($recentTrips as $trip)
         <li class="list-group-item px-3 py-2 d-flex align-items-center justify-content-between gap-3">
             <div class="overflow-hidden">
-                <p class="fw-medium text-dark mb-0 text-truncate" style="font-size:.875rem">
+                <p class="fw-medium text-dark small mb-0 text-truncate">
                     {{ $trip->customer?->name ?? $trip->customer?->company_name ?? 'Walk-in' }}
                 </p>
-                <p class="text-muted mb-0" style="font-size:.75rem">
+                <p class="small text-muted mb-0">
                     {{ $trip->vehicle?->name }} · {{ \Carbon\Carbon::parse($trip->trip_date)->format('d M Y') }}
                 </p>
             </div>
             <div class="text-end flex-shrink-0">
-                <p class="fw-semibold text-dark mb-1" style="font-size:.875rem">₹{{ number_format($trip->total_amount, 2) }}</p>
+                <p class="fw-semibold text-dark small mb-1">₹{{ number_format($trip->total_amount, 2) }}</p>
                 @php
                     $sc = match($trip->payment_status) {
                         'paid'    => 'text-bg-success',
@@ -177,7 +176,7 @@
                         default   => 'text-bg-secondary',
                     };
                 @endphp
-                <span class="badge {{ $sc }}" style="font-size:.7rem">{{ ucfirst($trip->payment_status) }}</span>
+                <span class="badge {{ $sc }}">{{ ucfirst($trip->payment_status) }}</span>
             </div>
         </li>
         @endforeach
@@ -189,15 +188,15 @@
 @if($expiringDocuments->isNotEmpty())
 <div class="card border-danger shadow-sm mb-4">
     <div class="card-header bg-danger bg-opacity-10 border-danger py-2 px-3">
-        <p class="fw-semibold text-danger mb-0" style="font-size:.9rem">⚠️ Document Expiry Alerts</p>
+        <p class="fw-semibold text-danger small mb-0">⚠️ Document Expiry Alerts</p>
     </div>
     <ul class="list-group list-group-flush">
         @foreach($expiringDocuments as $doc)
         <li class="list-group-item px-3 py-2">
-            <p class="fw-medium text-dark mb-1" style="font-size:.875rem">
-                {{ $doc->name }} <span class="text-muted font-monospace" style="font-size:.75rem">({{ $doc->registration_number }})</span>
+            <p class="fw-medium text-dark small mb-1">
+                {{ $doc->name }} <span class="text-muted font-monospace small">({{ $doc->registration_number }})</span>
             </p>
-            <div class="d-flex flex-wrap gap-3 text-muted" style="font-size:.75rem">
+            <div class="d-flex flex-wrap gap-3 text-muted small">
                 @if($doc->insurance_expiry) <span>Insurance: {{ \Carbon\Carbon::parse($doc->insurance_expiry)->format('d M Y') }}</span> @endif
                 @if($doc->permit_expiry)    <span>Permit: {{ \Carbon\Carbon::parse($doc->permit_expiry)->format('d M Y') }}</span> @endif
                 @if($doc->fitness_expiry)   <span>Fitness: {{ \Carbon\Carbon::parse($doc->fitness_expiry)->format('d M Y') }}</span> @endif

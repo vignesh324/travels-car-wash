@@ -157,6 +157,32 @@ class Invoice extends Model
         ];
     }
 
+    public static function tripSummaryItems(Collection $trips): array
+    {
+        return $trips
+            ->groupBy(fn (Trip $trip) => $trip->vehicle_id . '|' . strtolower(trim($trip->route ?? '')))
+            ->map(function (Collection $group) {
+                /** @var Trip $trip */
+                $trip = $group->first();
+                $vehicleType = $trip->vehicle?->type ?: $trip->vehicle?->name ?: 'Vehicle';
+                $route = trim($trip->route ?? '');
+
+                return [
+                    'description' => $vehicleType,
+                    'source' => 'travels',
+                    'vehicle_type' => $vehicleType,
+                    'route' => $route !== '' ? $route : null,
+                    'service_days' => $group->count(),
+                    'quantity' => 1,
+                    'unit_price' => round($group->sum(fn (Trip $item) => (float) $item->total_amount), 2),
+                    'discount' => 0,
+                    'tax_rate' => 0,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
     public function recalculatePaymentStatus(): void
     {
         $paid = $this->allocations()

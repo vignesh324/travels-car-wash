@@ -11,6 +11,7 @@ use App\Services\InvoiceNumberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\Facades\DataTables;
 
 class InvoiceController extends Controller
@@ -33,6 +34,7 @@ class InvoiceController extends Controller
 
     public function store(Request $request)
     {
+        $hasTrips = !empty($request->input('trip_ids', []));
         $validated = $request->validate([
             'customer_id'     => 'required|exists:customers,id',
             'invoice_date'    => 'required|date',
@@ -42,8 +44,10 @@ class InvoiceController extends Controller
             'payment_terms'   => 'nullable|string|max:255',
             'notes'           => 'nullable|string',
             'trip_ids'        => 'nullable|array',
-            'trip_ids.*'      => 'exists:trips,id',
-            'items'           => 'required|array|min:1',
+            'trip_ids.*'      => 'integer|distinct|exists:trips,id',
+            'trip_date_from'  => 'nullable|date',
+            'trip_date_to'    => 'nullable|date|after_or_equal:trip_date_from',
+            'items'           => $hasTrips ? 'nullable|array' : 'required|array|min:1',
             'items.*.description' => 'required|string|max:500',
             'items.*.source'      => 'required|in:travels,carwash',
             'items.*.quantity'    => 'required|numeric|min:0.01',
@@ -52,24 +56,41 @@ class InvoiceController extends Controller
             'items.*.tax_rate'    => 'nullable|numeric|min:0|max:100',
         ]);
 
-        // Validate trip_ids not already invoiced
-        if (!empty($validated['trip_ids'])) {
-            $alreadyInvoiced = Trip::whereIn('id', $validated['trip_ids'])
-                ->where('is_invoiced', true)->count();
-            if ($alreadyInvoiced > 0) {
-                return response()->json(['message' => 'One or more trips are already invoiced.'], 422);
-            }
-        }
-
         $profile = BusinessProfile::first();
         $businessState = $profile?->state ?? '';
         $placeOfSupply = $validated['place_of_supply'] ?? $businessState;
 
-        $calc = Invoice::calculateTotals($validated['items'], $placeOfSupply, $businessState);
-
         $customer = \App\Models\Customer::findOrFail($validated['customer_id']);
 
-        $invoice = DB::transaction(function () use ($validated, $calc, $customer, $profile, $placeOfSupply) {
+        $invoice = DB::transaction(function () use ($validated, $customer, $profile, $placeOfSupply, $businessState) {
+            $trips = new \Illuminate\Database\Eloquent\Collection();
+            if (!empty($validated['trip_ids'])) {
+                $trips = Trip::with('vehicle')
+                    ->whereIn('id', $validated['trip_ids'])
+                    ->lockForUpdate()
+                    ->get();
+
+                $validTrips = $trips->count() === count($validated['trip_ids'])
+                    && $trips->every(fn (Trip $trip) =>
+                        (int) $trip->customer_id === (int) $validated['customer_id']
+                        && $trip->status === 'completed'
+                        && !$trip->is_invoiced
+                        && (!isset($validated['trip_date_from']) || $trip->trip_date->toDateString() >= $validated['trip_date_from'])
+                        && (!isset($validated['trip_date_to']) || $trip->trip_date->toDateString() <= $validated['trip_date_to'])
+                    );
+
+                if (!$validTrips) {
+                    throw ValidationException::withMessages([
+                        'trip_ids' => 'Trips must be completed, uninvoiced trips for this customer within the selected date range.',
+                    ]);
+                }
+            }
+
+            $items = array_merge($validated['items'] ?? [], Invoice::tripSummaryItems($trips));
+            if ($items === []) {
+                throw ValidationException::withMessages(['items' => 'Add at least one invoice item or select trips.']);
+            }
+            $calc = Invoice::calculateTotals($items, $placeOfSupply, $businessState);
             $number = app(InvoiceNumberService::class)->generate();
 
             $invoice = Invoice::create([
@@ -109,11 +130,11 @@ class InvoiceController extends Controller
                 InvoiceItem::create(array_merge($item, ['invoice_id' => $invoice->id]));
             }
 
-            if (!empty($validated['trip_ids'])) {
-                foreach ($validated['trip_ids'] as $tripId) {
-                    $invoice->tripLinks()->create(['trip_id' => $tripId]);
+            if ($trips->isNotEmpty()) {
+                foreach ($trips as $trip) {
+                    $invoice->tripLinks()->create(['trip_id' => $trip->id]);
                 }
-                Trip::whereIn('id', $validated['trip_ids'])->update(['is_invoiced' => true]);
+                Trip::whereIn('id', $trips->modelKeys())->update(['is_invoiced' => true]);
             }
 
             activity()->causedBy(Auth::user())->performedOn($invoice)
@@ -150,6 +171,9 @@ class InvoiceController extends Controller
             'items.*.unit_price'  => 'required|numeric|min:0',
             'items.*.discount'    => 'nullable|numeric|min:0',
             'items.*.tax_rate'    => 'nullable|numeric|min:0|max:100',
+            'items.*.vehicle_type' => 'nullable|string|max:255',
+            'items.*.route'        => 'nullable|string|max:255',
+            'items.*.service_days' => 'nullable|integer|min:1',
         ]);
 
         $profile = BusinessProfile::first();

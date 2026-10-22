@@ -3,13 +3,13 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div>
-                    <p class="resource-kicker mb-1">Vehicle record</p>
+                    <p class="text-uppercase small fw-semibold text-secondary mb-1">Vehicle record</p>
                     <h2 id="veh-view-title" class="modal-title fs-5 fw-semibold">Vehicle details</h2>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close vehicle details"></button>
             </div>
             <div class="modal-body">
-                <dl class="row g-3 mb-0 vehicle-view-details">
+                <dl class="row g-3 mb-0">
                     <div class="col-12 col-sm-6"><dt>Registration</dt><dd data-vehicle-field="registration_number">—</dd></div>
                     <div class="col-12 col-sm-6"><dt>Name</dt><dd data-vehicle-field="name">—</dd></div>
                     <div class="col-12 col-sm-6"><dt>Model</dt><dd data-vehicle-field="model">—</dd></div>

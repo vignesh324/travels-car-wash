@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BusinessExpense;
 use App\Models\CarWashTransaction;
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Trip;
@@ -20,7 +21,9 @@ class ReportsController extends Controller
 {
     public function index()
     {
-        return view('reports.index');
+        $customers = Customer::dropdownOptions();
+
+        return view('reports.index', compact('customers'));
     }
 
     private function dateRange(Request $request): array
@@ -100,7 +103,7 @@ class ReportsController extends Controller
         $trips = Trip::whereBetween('trip_date', [$from, $to])
             ->with(['vehicle:id,name,registration_number', 'customer:id,name,company_name,type'])
             ->when($request->vehicle_id,    fn($q, $v) => $q->where('vehicle_id', $v))
-            ->when($request->customer_id,   fn($q, $v) => $q->where('customer_id', $v))
+            ->when($request->customer_id, fn($q, $v) => $q->where('customer_id', $v))
             ->when($request->trip_type,     fn($q, $v) => $q->where('trip_type', $v))
             ->when($request->status,        fn($q, $v) => $q->where('status', $v))
             ->when($request->payment_status,fn($q, $v) => $q->where('payment_status', $v))
@@ -181,8 +184,9 @@ class ReportsController extends Controller
         [$from, $to] = $this->dateRange($request);
 
         $trips = Trip::whereBetween('trip_date', [$from, $to])
-            ->with(['vehicle:id,name,registration_number', 'customer:id,name,company_name'])
+            ->with(['vehicle:id,name,registration_number', 'customer:id,name,company_name,type'])
             ->when($request->vehicle_id, fn($q, $v) => $q->where('vehicle_id', $v))
+            ->when($request->customer_id, fn($q, $v) => $q->where('customer_id', $v))
             ->when($request->status,     fn($q, $v) => $q->where('status', $v))
             ->orderByDesc('trip_date')->get();
 
@@ -190,17 +194,18 @@ class ReportsController extends Controller
             public function __construct(private $data) {}
             public function collection(): Enumerable { return $this->data; }
             public function headings(): array {
-                return ['Trip #', 'Date', 'Vehicle', 'Customer', 'Type', 'Pickup', 'Drop', 'Fare', 'Total', 'Received', 'Balance', 'Status', 'Payment Status'];
+                return ['Trip #', 'Date', 'Vehicle', 'Customer', 'Type', 'Pickup', 'Drop', 'Route', 'Fare', 'Total', 'Received', 'Balance', 'Status', 'Payment Status'];
             }
             public function map($row): array {
                 return [
                     $row->trip_number,
                     $row->trip_date->format('d-m-Y'),
                     $row->vehicle?->name ?? '',
-                    $row->customer?->name ?? $row->customer?->company_name ?? 'Walk-in',
+                    $row->customer?->displayName() ?? 'Walk-in',
                     $row->trip_type,
                     $row->pickup_location ?? '',
                     $row->drop_location ?? '',
+                    $row->route ?? '',
                     $row->fare_amount,
                     $row->total_amount,
                     $row->amount_received,

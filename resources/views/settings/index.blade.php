@@ -57,7 +57,7 @@
             <section class="card border-0 shadow-sm mb-3">
                 <div class="card-header bg-white py-3"><h3 class="h6 fw-semibold mb-0">Business logo</h3></div>
                 <div class="card-body">
-                    <div id="logo-preview-wrap" class="d-none mb-3 text-center"><img id="logo-preview" class="img-fluid rounded-1 border p-2" style="max-height:120px" alt="Current business logo"></div>
+                    <div id="logo-preview-wrap" class="d-none mb-3 text-center"><img id="logo-preview" class="img-fluid rounded-1 border p-2" alt="Current business logo"></div>
                     <label class="form-label" for="business-logo">Upload logo</label>
                     <input class="form-control" type="file" id="business-logo" accept="image/*" />
                     <div class="form-text">Image file, maximum 2 MB. Used on business documents.</div>
@@ -87,8 +87,8 @@ async function loadSettings() {
         document.getElementById('invoice_number_reset').checked = Boolean(profile.invoice_number_reset);
         document.getElementById('bank_details').value = profile.bank_details ? JSON.stringify(profile.bank_details, null, 2) : '';
         document.getElementById('tax_config').value = profile.tax_config ? JSON.stringify(profile.tax_config, null, 2) : '';
-        if (profile.logo) {
-            document.getElementById('logo-preview').src = `${window.baseUrl}/storage/${profile.logo}`;
+        if (profile.logo_url) {
+            document.getElementById('logo-preview').src = profile.logo_url;
             document.getElementById('logo-preview-wrap').classList.remove('d-none');
         }
         document.getElementById('settings-loading').classList.add('d-none');
@@ -139,8 +139,13 @@ async function saveSettings(event) {
             return showSettingsError(message);
         }
         document.getElementById('business-logo').value = '';
-        if (data.logo) {
-            document.getElementById('logo-preview').src = `${window.baseUrl}/storage/${data.logo}`;
+        const sidebarBusinessName = document.getElementById('sidebar-biz-name');
+        if (sidebarBusinessName) {
+            sidebarBusinessName.textContent = data.business_name;
+            sidebarBusinessName.title = data.business_name;
+        }
+        if (data.logo_url) {
+            document.getElementById('logo-preview').src = data.logo_url;
             document.getElementById('logo-preview-wrap').classList.remove('d-none');
         }
         toast.success('Business settings saved');

@@ -86,7 +86,33 @@
         </div>
     </div>
 
+    @php
+        $hasTripSummaryItems = $invoice->items->isNotEmpty()
+            && $invoice->items->every(fn ($item) => $item->vehicle_type !== null);
+    @endphp
     <table>
+        @if($hasTripSummaryItems)
+        <thead>
+            <tr>
+                <th style="width:8%">Sl. No.</th>
+                <th style="width:35%">Vehicle Type</th>
+                <th style="width:32%">Route</th>
+                <th class="right" style="width:10%">Days</th>
+                <th class="right" style="width:15%">Amount (₹)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($invoice->items as $i => $item)
+            <tr>
+                <td>{{ $i + 1 }}</td>
+                <td>{{ $item->vehicle_type }}</td>
+                <td>{{ $item->route ?: '—' }}</td>
+                <td class="right">{{ $item->service_days }}</td>
+                <td class="right">{{ number_format($item->total_amount, 2) }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        @else
         <thead>
             <tr>
                 <th style="width:5%">#</th>
@@ -113,6 +139,7 @@
             </tr>
             @endforeach
         </tbody>
+        @endif
     </table>
 
     <div class="totals">

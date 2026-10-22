@@ -20,7 +20,7 @@
                 <label class="form-label" for="inp_veh_{{ $field }}">{{ $label }}{{ $required ? ' *' : '' }}</label>
                 <input id="inp_veh_{{ $field }}" name="{{ $field }}" type="{{ $inputType }}"
                     class="form-control inp-error" {{ $required }} value="{{ $vehicle?->{$field} ?? '' }}">
-                <p id="err_veh_{{ $field }}" class="field-error"></p>
+                <p id="err_veh_{{ $field }}" class="field-error small text-danger"></p>
             </div>
         @endforeach
         <div class="col-12 col-md-6">

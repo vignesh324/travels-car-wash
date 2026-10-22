@@ -20,14 +20,16 @@ class ExpenseCategory extends Model
         'is_active' => 'boolean',
     ];
 
-    public static function dropdownOptions(?string $type = null, ?int $includeId = null): Collection
+    public static function dropdownOptions(string|array|null $type = null, ?int $includeId = null): Collection
     {
         return static::query()
-            ->when($type, fn($query, $value) => $query->where('type', $value))
+            ->when($type, fn($query, $value) => is_array($value)
+                ? $query->whereIn('type', $value)
+                : $query->where('type', $value))
             ->where(function ($query) use ($includeId) {
                 $query->where('is_active', true);
                 if ($includeId) {
-                    $query->orWhereKey($includeId);
+                    $query->orWhere('id', $includeId);
                 }
             })
             ->orderBy('sort_order')
