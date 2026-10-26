@@ -9,7 +9,7 @@ A complete, production-ready, mobile-first web application designed for small bu
 
 ## 1. Technology Stack
 
-- **Backend**: Laravel 12 on PHP 8.3 / 8.4
+- **Backend**: Laravel 12 on PHP 8.2+
 - **Database**: MySQL 8 (InnoDB, UTF8mb4)
 - **Frontend**: Blade templates, Tailwind CSS (CDN), Chart.js (CDN), vanilla JS
 - **Tabular Data**: Yajra Laravel DataTables (server-side pagination, sorting, search, column filters)
@@ -65,7 +65,7 @@ A complete, production-ready, mobile-first web application designed for small bu
 ## 4. Local Development Setup
 
 ### Prerequisites
-- PHP >= 8.3 (with `pdo_mysql`, `gd`, `bcmath`, `mbstring`, `xml`, `curl`)
+- PHP >= 8.2 (with `pdo_mysql`, `gd`, `bcmath`, `mbstring`, `xml`, `curl`)
 - Composer >= 2.x
 - MySQL >= 8.0
 

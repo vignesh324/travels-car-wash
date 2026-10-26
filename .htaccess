@@ -9,9 +9,8 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Serve files from Laravel's public directory when installed in a subfolder
-    RewriteCond %{DOCUMENT_ROOT}/travels-car-wash/public/$1 -f
-    RewriteRule ^(.+)$ public/$1 [L]
+    # Serve static assets from Laravel's public directory when installed in a subfolder
+    RewriteRule ^(.+\.(css|js|ico|png|jpe?g|gif|svg|webp|woff2?|ttf|eot|map|txt|html))$ public/$1 [L,NC]
 
     # Serve existing files/directories directly
     RewriteCond %{REQUEST_FILENAME} -f [OR]
