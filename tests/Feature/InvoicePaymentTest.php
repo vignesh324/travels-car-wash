@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\Trip;
 use App\Models\User;
 use App\Models\Vehicle;
+use Database\Seeders\MonthlyTripInvoiceSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -170,12 +171,15 @@ class InvoicePaymentTest extends TestCase
         ]);
     }
 
-    public function test_invoice_page_renders_regular_trip_workflow(): void
+    public function test_invoice_page_links_to_standalone_invoice_details(): void
     {
         $this->actingAs($this->user)
             ->get('/invoices')
             ->assertOk()
-            ->assertSee('Create Invoice');
+            ->assertSee('Create Invoice')
+            ->assertSeeText('Open an invoice')
+            ->assertDontSee('modal-inv-view')
+            ->assertDontSee('function viewInvoice');
     }
 
     public function test_invoice_add_edit_endpoint_returns_complete_blade_form(): void
@@ -207,7 +211,225 @@ class InvoicePaymentTest extends TestCase
         $inv = $this->makeInvoice();
         $this->actingAs($this->user)
             ->getJson("/api/invoices/{$inv->uuid}")
-            ->assertOk()->assertJsonFragment(['id' => $inv->id]);
+            ->assertOk()
+            ->assertJsonPath('id', $inv->id)
+            ->assertJsonPath('uuid', $inv->uuid);
+    }
+
+    public function test_web_invoice_show_renders_uuid_detail_and_permitted_actions(): void
+    {
+        $profile = BusinessProfile::first();
+        $profile->update([
+            'business_name' => 'Test Biz',
+            'gstin' => '29BUSINESSGST',
+            'bank_details' => ['account_number' => '123456789'],
+            'upi_id' => 'adu@upi',
+            'default_payment_terms' => 'Payment due within 30 days',
+        ]);
+        $this->customer->update([
+            'address' => '10 Market Road',
+            'gstin' => '27CUSTOMERGST',
+        ]);
+        $trip = $this->makeTrip([
+            'trip_date' => '2025-06-12',
+            'trip_type' => 'Corporate',
+            'driver_name' => 'Ravi Kumar',
+            'pickup_location' => 'Coimbatore Airport',
+            'drop_location' => 'City Centre',
+        ]);
+        $invoice = $this->makeInvoice([
+            'trip_ids' => [$trip->id],
+            'trip_date_from' => '2025-06-01',
+            'trip_date_to' => '2025-06-30',
+            'items' => [],
+        ]);
+
+        $this->actingAs($this->user)
+            ->get("/invoices/{$invoice->uuid}")
+            ->assertOk()
+            ->assertViewIs('invoices.show')
+            ->assertSee($invoice->invoice_number)
+            ->assertSee('Test Biz')
+            ->assertSee('Acme Corp')
+            ->assertSee('27CUSTOMERGST')
+            ->assertSee('29BUSINESSGST')
+            ->assertSee('Payment due within 30 days')
+            ->assertSee('123456789')
+            ->assertSee('adu@upi')
+            ->assertSee('Daily trip statement')
+            ->assertSee('Corporate')
+            ->assertSee('Ravi Kumar')
+            ->assertSee('Coimbatore Airport')
+            ->assertSee('City Centre')
+            ->assertSee('Edit')
+            ->assertSee('Cancel')
+            ->assertSee('Download PDF')
+            ->assertSee(e(route('invoices.index', ['action' => 'edit', 'uuid' => $invoice->uuid])), false)
+            ->assertSee(e(route('invoices.index', ['action' => 'cancel', 'uuid' => $invoice->uuid, 'number' => $invoice->invoice_number])), false)
+            ->assertSee(e(route('invoices.pdf', ['invoice' => $invoice->uuid])), false);
+    }
+
+    public function test_web_invoice_show_remains_auth_gated(): void
+    {
+        $this->get('/invoices/not-a-valid-invoice-uuid')
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_monthly_trip_invoice_seeder_creates_an_idempotent_linked_invoice(): void
+    {
+        $month = now()->subMonthNoOverflow()->startOfMonth();
+        $invoiceNumber = 'DEMO-MONTHLY-' . $month->format('Ym');
+
+        $this->seed(MonthlyTripInvoiceSeeder::class);
+
+        $invoice = Invoice::where('invoice_number', $invoiceNumber)->firstOrFail();
+        $tripCount = $invoice->trips()->count();
+
+        $this->assertGreaterThanOrEqual(20, $tripCount);
+        $this->assertLessThanOrEqual(23, $tripCount);
+        $this->assertSame(2, $invoice->items()->count());
+        $this->assertSame($tripCount, $invoice->tripLinks()->count());
+        $this->assertEquals($invoice->total_amount, $invoice->trips()->sum('total_amount'));
+        $this->assertSame(
+            $tripCount,
+            Trip::where('customer_id', $invoice->customer_id)->where('is_invoiced', true)->count()
+        );
+
+        $this->seed(MonthlyTripInvoiceSeeder::class);
+
+        $this->assertSame(1, Invoice::where('invoice_number', $invoiceNumber)->count());
+        $this->assertSame($tripCount, $invoice->trips()->count());
+        $this->assertSame(2, $invoice->items()->count());
+    }
+
+    public function test_web_invoice_show_includes_all_persisted_lines_with_linked_trips(): void
+    {
+        $trip = $this->makeTrip(['fare_amount' => 500]);
+        $invoice = $this->makeInvoice([
+            'trip_ids' => [$trip->id],
+            'trip_date_from' => '2025-06-01',
+            'trip_date_to' => '2025-06-30',
+            'items' => [[
+                'description' => 'Additional legacy charge',
+                'source' => 'travels',
+                'quantity' => 1,
+                'unit_price' => 400,
+                'tax_rate' => 0,
+            ]],
+        ]);
+        $invoice->items()
+            ->where('description', 'Additional legacy charge')
+            ->update([
+                'vehicle_type' => 'Legacy executive service',
+                'route' => 'Airport transfer',
+            ]);
+
+        $response = $this->actingAs($this->user)
+            ->get("/invoices/{$invoice->uuid}")
+            ->assertOk()
+            ->assertSee('Daily trip statement')
+            ->assertSee('Persisted invoice line items')
+            ->assertSee('Additional legacy charge')
+            ->assertSee('Legacy executive service')
+            ->assertSee('Airport transfer')
+            ->assertSee('₹900.00');
+
+        preg_match_all('/<tr>(.*?)<\/tr>/s', $response->getContent(), $rows);
+        $generatedTripSummary = collect($rows[1])->first(fn ($row) => str_contains($row, 'V1'));
+
+        $this->assertNotNull($generatedTripSummary);
+        $this->assertMatchesRegularExpression(
+            '/<td class="text-end">\s*<span aria-label="Rate not specified">—<\/span>\s*<\/td>/',
+            $generatedTripSummary
+        );
+        $this->assertStringContainsString('<td class="text-end fw-semibold">₹500.00</td>', $generatedTripSummary);
+        $this->assertStringContainsString('<td class="text-end">₹400.00</td>', $response->getContent());
+    }
+
+    public function test_invoice_detail_includes_linked_trip_statement_data_and_issue_snapshots(): void
+    {
+        $trip = $this->makeTrip([
+            'trip_date' => '2025-06-12',
+            'trip_type' => 'Corporate',
+            'driver_name' => 'Ravi Kumar',
+            'pickup_location' => 'Coimbatore Airport',
+            'drop_location' => 'City Centre',
+        ]);
+        $invoice = $this->makeInvoice([
+            'trip_ids' => [$trip->id],
+            'trip_date_from' => '2025-06-01',
+            'trip_date_to' => '2025-06-30',
+            'items' => [],
+        ]);
+
+        $this->customer->update(['company_name' => 'Renamed Customer']);
+        BusinessProfile::first()->update(['business_name' => 'Renamed Business']);
+
+        $this->actingAs($this->user)
+            ->getJson("/api/invoices/{$invoice->uuid}")
+            ->assertOk()
+            ->assertJsonPath('customer_name', 'Acme Corp')
+            ->assertJsonPath('business_name', 'Test Biz')
+            ->assertJsonPath('business_profile.business_name', 'Renamed Business')
+            ->assertJsonPath('trips.0.trip_type', 'Corporate')
+            ->assertJsonPath('trips.0.pickup_location', 'Coimbatore Airport')
+            ->assertJsonPath('trips.0.drop_location', 'City Centre')
+            ->assertJsonPath('trips.0.driver_name', 'Ravi Kumar')
+            ->assertJsonPath('trips.0.vehicle.registration_number', 'MH12AB1234');
+
+        $this->actingAs($this->user)
+            ->get("/api/invoices/{$invoice->uuid}/pdf")
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+    }
+
+    public function test_trip_invoice_summary_uses_actual_trip_counts_and_amounts_without_pickup_drop_classifications(): void
+    {
+        $first = $this->makeTrip([
+            'trip_type' => 'Corporate',
+            'fare_amount' => 500,
+            'pickup_location' => 'Airport',
+            'drop_location' => 'City Centre',
+        ]);
+        $second = $this->makeTrip([
+            'trip_type' => 'Local',
+            'fare_amount' => 700,
+            'pickup_location' => 'Railway Station',
+            'drop_location' => 'Hotel',
+        ]);
+        $invoice = $this->makeInvoice([
+            'trip_ids' => [$first->id, $second->id],
+            'trip_date_from' => '2025-06-01',
+            'trip_date_to' => '2025-06-30',
+            'items' => [],
+        ]);
+        $profile = BusinessProfile::first();
+        $profile->update(['default_payment_terms' => 'Payment due within 30 days']);
+
+        $invoice->load(['customer', 'items', 'trips.vehicle']);
+        $html = view('pdf.invoice', compact('invoice', 'profile'))->render();
+
+        $this->assertStringContainsString('Total billable trip records', $html);
+        $this->assertStringContainsString('Recorded trip types / counts', $html);
+        $this->assertStringContainsString('Corporate: 1', $html);
+        $this->assertStringContainsString('Local: 1', $html);
+        $this->assertStringContainsString('Total linked trip amount', $html);
+        $this->assertStringContainsString('₹1,200.00', $html);
+        $this->assertStringNotContainsString('Average amount per trip', $html);
+        $this->assertStringNotContainsString('Average amount / trip', $html);
+        $this->assertStringContainsString('Trip amount (₹)', $html);
+        $this->assertStringNotContainsString('Pickup trips', $html);
+        $this->assertStringNotContainsString('Drop trips', $html);
+        $this->assertStringNotContainsString('page-break-before', $html);
+        $this->assertStringNotContainsString('billing-summary keep-together', $html);
+        $this->assertStringContainsString('header-table billing-area keep-together', $html);
+        $this->assertStringContainsString('Payment due within 30 days', $html);
+        $this->assertMatchesRegularExpression('/<\/table>\s*<\/section>\s*<table class="footer-table">/', $html);
+
+        $this->actingAs($this->user)
+            ->getJson("/api/invoices/{$invoice->uuid}")
+            ->assertOk()
+            ->assertJsonPath('business_profile.default_payment_terms', 'Payment due within 30 days');
     }
 
     public function test_update_invoice(): void

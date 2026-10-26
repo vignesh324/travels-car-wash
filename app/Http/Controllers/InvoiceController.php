@@ -68,7 +68,7 @@ class InvoiceController extends Controller
             $dataTable
                 ->addColumn('actions', fn (Invoice $invoice) =>
                     '<div class="d-inline-flex justify-content-end gap-1 text-nowrap resource-row-actions">'
-                    . '<button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" data-action="invoices.view" aria-label="' . e('View invoice ' . $invoice->invoice_number) . '" title="View" data-invoice-uuid="' . e($invoice->uuid) . '"><i class="bi bi-eye" aria-hidden="true"></i><span>View</span></button>'
+                    . '<a href="' . e(route('invoices.show', ['invoice' => $invoice->uuid])) . '" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" aria-label="' . e('View invoice ' . $invoice->invoice_number) . '" title="View"><i class="bi bi-eye" aria-hidden="true"></i><span>View</span></a>'
                     . '<button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" data-action="invoices.pdf" aria-label="' . e('Download PDF for invoice ' . $invoice->invoice_number) . '" title="PDF" data-pdf-url="' . e(route('invoices.pdf', ['invoice' => $invoice->uuid])) . '"><i class="bi bi-filetype-pdf" aria-hidden="true"></i><span>PDF</span></button>'
                     . (in_array($invoice->status, ['paid', 'cancelled'], true)
                         ? ''
@@ -205,7 +205,10 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice)
     {
-        return response()->json($invoice->load(['customer', 'items', 'trips', 'allocations.payment']));
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
+        $profile = BusinessProfile::first();
+
+        return view('invoices.show', compact('invoice', 'profile'));
     }
 
     public function update(Request $request, Invoice $invoice)
@@ -297,7 +300,7 @@ class InvoiceController extends Controller
 
     public function pdf(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'allocations.payment']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
         $profile  = BusinessProfile::first();
         $filename = 'Invoice-' . str_replace('/', '-', $invoice->invoice_number) . '.pdf';
 
@@ -318,7 +321,7 @@ class InvoiceController extends Controller
 
     public function pdfSigned(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'allocations.payment']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
         $profile  = BusinessProfile::first();
         $filename = 'Invoice-' . str_replace('/', '-', $invoice->invoice_number) . '.pdf';
 

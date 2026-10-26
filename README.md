@@ -101,6 +101,12 @@ A complete, production-ready, mobile-first web application designed for small bu
    transactions. Use `php artisan db:seed` to add or refresh the sample records
    without deleting existing tables. Demo records use `DEMO-` identifiers; do
    not load them into a production database.
+   To add a standalone monthly corporate-trip invoice for the previous month,
+   first create the demo business profile with `php artisan db:seed`, then run
+   `php artisan db:seed --class=MonthlyTripInvoiceSeeder`. This creates weekday
+   trips, links them to a generated invoice, and skips creation if that
+   month's `DEMO-MONTHLY-YYYYMM` invoice already exists. Use only in development
+   or test databases.
    *Default Login Credentials*:
    - Email: `admin@example.com`
    - Password: `password`

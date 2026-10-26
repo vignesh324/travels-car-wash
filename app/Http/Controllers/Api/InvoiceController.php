@@ -149,7 +149,11 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice)
     {
-        return response()->json($invoice->load(['customer', 'items', 'trips', 'allocations.payment']));
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
+
+        return response()->json(array_merge($invoice->toArray(), [
+            'business_profile' => BusinessProfile::first(['business_name', 'address', 'gstin', 'phone', 'email', 'upi_id', 'default_payment_terms']),
+        ]));
     }
 
     public function update(Request $request, Invoice $invoice)
@@ -243,7 +247,7 @@ class InvoiceController extends Controller
 
     public function pdf(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'allocations.payment']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
         $profile = BusinessProfile::first();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', compact('invoice', 'profile'));
@@ -262,7 +266,7 @@ class InvoiceController extends Controller
 
     public function pdfSigned(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'allocations.payment']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
         $profile = BusinessProfile::first();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', compact('invoice', 'profile'));

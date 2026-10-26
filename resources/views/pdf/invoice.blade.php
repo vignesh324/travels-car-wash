@@ -3,192 +3,298 @@
 <head>
 <meta charset="utf-8">
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1a1a1a; }
-    .page { padding: 30px; }
-    .header { display: flex; justify-content: space-between; margin-bottom: 24px; border-bottom: 2px solid #2563eb; padding-bottom: 16px; }
-    .business-name { font-size: 18px; font-weight: bold; color: #1e40af; }
-    .business-details { font-size: 10px; color: #555; margin-top: 4px; line-height: 1.5; }
-    .invoice-title { text-align: right; }
-    .invoice-title h1 { font-size: 22px; font-weight: bold; color: #1e40af; }
-    .invoice-title .inv-number { font-size: 13px; font-weight: bold; margin-top: 4px; }
-    .invoice-title .inv-date { font-size: 10px; color: #555; margin-top: 2px; }
-    .parties { display: flex; justify-content: space-between; margin-bottom: 20px; }
-    .party-box { width: 48%; }
-    .party-label { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #6b7280; margin-bottom: 4px; letter-spacing: 0.5px; }
-    .party-name { font-size: 12px; font-weight: bold; }
-    .party-detail { font-size: 10px; color: #444; line-height: 1.5; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-    thead th { background: #1e40af; color: white; padding: 7px 8px; text-align: left; font-size: 10px; }
-    thead th.right { text-align: right; }
-    tbody td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; font-size: 10px; }
-    tbody td.right { text-align: right; }
-    tbody tr:nth-child(even) { background: #f9fafb; }
-    .totals { margin-left: auto; width: 260px; }
-    .totals table { margin-bottom: 0; }
-    .totals td { padding: 4px 8px; font-size: 10px; border: none; }
-    .totals td.label { color: #555; }
-    .totals td.value { text-align: right; font-weight: 500; }
-    .totals .grand-total td { font-size: 13px; font-weight: bold; border-top: 2px solid #1e40af; padding-top: 6px; color: #1e40af; }
-    .balance-due td { color: #dc2626; font-weight: bold; }
-    .footer-section { margin-top: 24px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
-    .bank-details { font-size: 10px; color: #444; line-height: 1.6; }
-    .footer-note { font-size: 9px; color: #888; margin-top: 8px; }
-    .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: bold; text-transform: uppercase; }
-    .status-paid { background: #dcfce7; color: #166534; }
-    .status-partial { background: #fef9c3; color: #854d0e; }
-    .status-issued { background: #dbeafe; color: #1e40af; }
-    .status-cancelled { background: #fee2e2; color: #991b1b; }
+    @page { size: A4; margin: 18mm 15mm 17mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #182b42; font-family: DejaVu Sans, sans-serif; font-size: 9px; line-height: 1.45; }
+    .page { width: 100%; }
+    .top-rule { height: 5px; background: #153d68; margin-bottom: 16px; }
+    .header-table, .party-table, .summary-table, .data-table, .totals-table, .footer-table { width: 100%; border-collapse: collapse; }
+    .header-table { margin-bottom: 14px; }
+    .brand { color: #153d68; font-size: 20px; font-weight: bold; letter-spacing: .3px; }
+    .provider-detail { color: #536579; font-size: 8px; line-height: 1.5; }
+    .invoice-heading { color: #153d68; font-size: 16px; font-weight: bold; letter-spacing: .5px; text-align: right; }
+    .invoice-meta { color: #536579; font-size: 8px; text-align: right; }
+    .invoice-number { color: #182b42; font-size: 11px; font-weight: bold; text-align: right; }
+    .status { color: #153d68; font-size: 8px; font-weight: bold; text-align: right; text-transform: uppercase; }
+    .rule { border-bottom: 1px solid #cbd5df; }
+    .section-title { margin: 15px 0 6px; color: #153d68; font-size: 9px; font-weight: bold; letter-spacing: .7px; text-transform: uppercase; }
+    .party-table { margin: 14px 0 15px; }
+    .party-cell { width: 50%; vertical-align: top; padding: 10px 12px; border: 1px solid #d5dee7; }
+    .party-cell + .party-cell { border-left: 0; }
+    .label { color: #607286; font-size: 7px; font-weight: bold; letter-spacing: .7px; text-transform: uppercase; }
+    .party-name { margin: 3px 0; color: #182b42; font-size: 11px; font-weight: bold; }
+    .muted { color: #536579; }
+    .summary-table { margin: 2px 0 15px; }
+    .summary-cell { width: 25%; padding: 8px 9px; vertical-align: top; background: #f2f6fa; border-right: 2px solid #fff; }
+    .summary-cell:last-child { border-right: 0; }
+    .summary-value { margin-top: 3px; color: #153d68; font-size: 12px; font-weight: bold; }
+    .summary-note { margin-top: 3px; color: #536579; font-size: 7px; }
+    .data-table { margin: 4px 0 13px; }
+    .data-table thead { display: table-header-group; }
+    .data-table th { padding: 7px 6px; color: #fff; background: #153d68; border: 1px solid #153d68; text-align: left; font-size: 7px; letter-spacing: .2px; text-transform: uppercase; }
+    .data-table td { padding: 6px; border-bottom: 1px solid #dce3ea; vertical-align: top; }
+    .data-table tbody tr:nth-child(even) { background: #f7f9fb; }
+    .right { text-align: right; }
+    .center { text-align: center; }
+    .numeric { text-align: right; white-space: nowrap; }
+    .trip-main { color: #182b42; font-weight: bold; }
+    .trip-sub { margin-top: 2px; color: #536579; font-size: 7px; }
+    .subheading { color: #153d68; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: .4px; }
+    .billing-area { margin-top: 12px; }
+    .billing-left { width: 56%; vertical-align: top; padding-right: 14px; }
+    .billing-right { width: 44%; vertical-align: top; }
+    .totals-table { margin-top: 3px; }
+    .totals-table td { padding: 3px 5px; border-bottom: 1px solid #e3e8ee; }
+    .totals-table .total td { padding-top: 7px; color: #153d68; border-top: 2px solid #153d68; border-bottom: 0; font-size: 11px; font-weight: bold; }
+    .totals-table .balance td { color: #9b3535; font-weight: bold; }
+    .payment-box { margin-top: 10px; padding: 8px 10px; background: #f2f6fa; }
+    .payment-box p { margin: 3px 0 0; }
+    .bank-line { color: #43566b; font-size: 8px; }
+    .notes { margin-top: 10px; padding: 8px 10px; border-left: 3px solid #c49a52; background: #fbf8f0; }
+    .footer-table { margin-top: 18px; page-break-inside: avoid; }
+    .thank-you { color: #153d68; font-size: 10px; font-weight: bold; }
+    .signature-cell { width: 50%; padding: 24px 10px 0; vertical-align: bottom; }
+    .signature-line { padding-top: 5px; border-top: 1px solid #8999a9; color: #536579; text-align: center; font-size: 7px; }
+    .footer-note { margin-top: 11px; padding-top: 6px; border-top: 1px solid #d5dee7; color: #536579; font-size: 7px; text-align: center; }
+    .empty-note { padding: 12px; color: #536579; border: 1px solid #dce3ea; text-align: center; }
+    .keep-together { page-break-inside: avoid; }
 </style>
 </head>
 <body>
+@php
+    $trips = $invoice->trips ?? collect();
+    $tripTypes = $trips->groupBy(fn ($trip) => trim((string) $trip->trip_type) ?: 'Unspecified');
+    $tripAmount = $trips->sum(fn ($trip) => (float) $trip->total_amount);
+    $firstTripDate = $trips->min('trip_date');
+    $lastTripDate = $trips->max('trip_date');
+    $billingPeriod = $firstTripDate && $lastTripDate
+        ? ($firstTripDate->isSameDay($lastTripDate) ? $firstTripDate->format('d-m-Y') : $firstTripDate->format('d-m-Y') . ' to ' . $lastTripDate->format('d-m-Y'))
+        : 'Service period not recorded';
+    $manualItems = $trips->isNotEmpty()
+        ? $invoice->items->filter(fn ($item) => $item->vehicle_type === null)
+        : $invoice->items;
+    $businessName = $invoice->business_name ?: $profile?->business_name ?: 'ADU Travels';
+    $businessAddress = $invoice->business_address ?: $profile?->address;
+    $businessGstin = $invoice->business_gstin ?: $profile?->gstin;
+@endphp
 <div class="page">
-    <div class="header">
-        <div>
-            <div class="business-name">{{ $profile?->business_name ?? 'Business Name' }}</div>
-            <div class="business-details">
-                @if($profile?->address){{ $profile->address }}<br>@endif
-                @if($profile?->phone)Phone: {{ $profile->phone }}<br>@endif
-                @if($profile?->email)Email: {{ $profile->email }}<br>@endif
-                @if($profile?->gstin)GSTIN: {{ $profile->gstin }}@endif
-            </div>
-        </div>
-        <div class="invoice-title">
-            <h1>TAX INVOICE</h1>
-            <div class="inv-number">{{ $invoice->invoice_number }}</div>
-            <div class="inv-date">Date: {{ $invoice->invoice_date->format('d-m-Y') }}</div>
-            @if($invoice->due_date)
-            <div class="inv-date">Due: {{ $invoice->due_date->format('d-m-Y') }}</div>
-            @endif
-            <div style="margin-top:6px">
-                <span class="status-badge status-{{ $invoice->status }}">{{ strtoupper($invoice->status) }}</span>
-            </div>
-        </div>
-    </div>
+    <div class="top-rule"></div>
+    <table class="header-table">
+        <tr>
+            <td style="width:55%; vertical-align:top">
+                <div class="brand">{{ $businessName }}</div>
+                <div class="provider-detail">
+                    @if($businessAddress){{ $businessAddress }}<br>@endif
+                    @if($profile?->phone)Phone: {{ $profile->phone }}<br>@endif
+                    @if($profile?->email)Email: {{ $profile->email }}<br>@endif
+                    @if($businessGstin)GSTIN: {{ $businessGstin }}@endif
+                </div>
+            </td>
+            <td style="width:45%; vertical-align:top">
+                <div class="invoice-heading">{{ $trips->isNotEmpty() ? 'MONTHLY CORPORATE TAXI INVOICE' : 'TAX INVOICE' }}</div>
+                <div class="invoice-number">{{ $invoice->invoice_number }}</div>
+                <div class="invoice-meta">Invoice date: {{ $invoice->invoice_date?->format('d-m-Y') ?? '—' }}</div>
+                <div class="invoice-meta">Billing period: {{ $billingPeriod }}</div>
+                @if($invoice->due_date)<div class="invoice-meta">Due date: {{ $invoice->due_date->format('d-m-Y') }}</div>@endif
+                <div class="status">Status: {{ strtoupper($invoice->status ?? 'issued') }}</div>
+            </td>
+        </tr>
+    </table>
+    <div class="rule"></div>
 
-    <div class="parties">
-        <div class="party-box">
-            <div class="party-label">Bill To</div>
-            <div class="party-name">{{ $invoice->customer_name }}</div>
-            <div class="party-detail">
-                @if($invoice->customer_address){{ $invoice->customer_address }}<br>@endif
-                @if($invoice->customer_state){{ $invoice->customer_state }}@if($invoice->customer_state_code) ({{ $invoice->customer_state_code }})@endif<br>@endif
-                @if($invoice->customer_gstin)GSTIN: {{ $invoice->customer_gstin }}@endif
-            </div>
-        </div>
-        <div class="party-box" style="text-align:right">
-            <div class="party-label">Place of Supply</div>
-            <div class="party-detail">{{ $invoice->place_of_supply ?? '—' }}</div>
-            @if($invoice->payment_terms)
-            <div class="party-label" style="margin-top:8px">Payment Terms</div>
-            <div class="party-detail">{{ $invoice->payment_terms }}</div>
-            @endif
-        </div>
-    </div>
-
-    @php
-        $hasTripSummaryItems = $invoice->items->isNotEmpty()
-            && $invoice->items->every(fn ($item) => $item->vehicle_type !== null);
-    @endphp
-    <table>
-        @if($hasTripSummaryItems)
-        <thead>
-            <tr>
-                <th style="width:8%">Sl. No.</th>
-                <th style="width:35%">Vehicle Type</th>
-                <th style="width:32%">Route</th>
-                <th class="right" style="width:10%">Days</th>
-                <th class="right" style="width:15%">Amount (₹)</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($invoice->items as $i => $item)
-            <tr>
-                <td>{{ $i + 1 }}</td>
-                <td>{{ $item->vehicle_type }}</td>
-                <td>{{ $item->route ?: '—' }}</td>
-                <td class="right">{{ $item->service_days }}</td>
-                <td class="right">{{ number_format($item->total_amount, 2) }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-        @else
-        <thead>
-            <tr>
-                <th style="width:5%">#</th>
-                <th style="width:40%">Description</th>
-                <th class="right" style="width:8%">Qty</th>
-                <th class="right" style="width:12%">Rate (₹)</th>
-                <th class="right" style="width:10%">Disc (₹)</th>
-                <th class="right" style="width:12%">Taxable (₹)</th>
-                <th class="right" style="width:8%">GST%</th>
-                <th class="right" style="width:12%">Amount (₹)</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($invoice->items as $i => $item)
-            <tr>
-                <td>{{ $i + 1 }}</td>
-                <td>{{ $item->description }}</td>
-                <td class="right">{{ number_format($item->quantity, 2) }}</td>
-                <td class="right">{{ number_format($item->unit_price, 2) }}</td>
-                <td class="right">{{ number_format($item->discount, 2) }}</td>
-                <td class="right">{{ number_format($item->taxable_amount, 2) }}</td>
-                <td class="right">{{ number_format($item->tax_rate, 1) }}%</td>
-                <td class="right">{{ number_format($item->total_amount, 2) }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-        @endif
+    <table class="party-table">
+        <tr>
+            <td class="party-cell">
+                <div class="label">Bill to</div>
+                <div class="party-name">{{ $invoice->customer_name ?: $invoice->customer?->company_name ?: $invoice->customer?->name ?: 'Customer' }}</div>
+                <div class="muted">
+                    @if($invoice->customer_address){{ $invoice->customer_address }}<br>@endif
+                    @if($invoice->customer_state){{ $invoice->customer_state }}@if($invoice->customer_state_code) ({{ $invoice->customer_state_code }})@endif<br>@endif
+                    @if($invoice->customer_gstin)GSTIN: {{ $invoice->customer_gstin }}@endif
+                </div>
+            </td>
+            <td class="party-cell">
+                <div class="label">Service provider</div>
+                <div class="party-name">{{ $businessName }}</div>
+                <div class="muted">
+                    @if($businessAddress){{ $businessAddress }}<br>@endif
+                    @if($businessGstin)GSTIN: {{ $businessGstin }}<br>@endif
+                    Place of supply: {{ $invoice->place_of_supply ?: '—' }}
+                </div>
+            </td>
+        </tr>
     </table>
 
-    <div class="totals">
-        <table>
-            <tr><td class="label">Subtotal</td><td class="value">₹{{ number_format($invoice->subtotal, 2) }}</td></tr>
-            @if($invoice->discount_total > 0)
-            <tr><td class="label">Discount</td><td class="value">- ₹{{ number_format($invoice->discount_total, 2) }}</td></tr>
-            @endif
-            <tr><td class="label">Taxable Amount</td><td class="value">₹{{ number_format($invoice->taxable_amount, 2) }}</td></tr>
-            @if($invoice->cgst_amount > 0)
-            <tr><td class="label">CGST</td><td class="value">₹{{ number_format($invoice->cgst_amount, 2) }}</td></tr>
-            <tr><td class="label">SGST</td><td class="value">₹{{ number_format($invoice->sgst_amount, 2) }}</td></tr>
-            @endif
-            @if($invoice->igst_amount > 0)
-            <tr><td class="label">IGST</td><td class="value">₹{{ number_format($invoice->igst_amount, 2) }}</td></tr>
-            @endif
-            <tr class="grand-total"><td class="label">Total</td><td class="value">₹{{ number_format($invoice->total_amount, 2) }}</td></tr>
-            @if($invoice->amount_paid > 0)
-            <tr><td class="label">Amount Paid</td><td class="value">₹{{ number_format($invoice->amount_paid, 2) }}</td></tr>
-            @endif
-            @if($invoice->balance_due > 0)
-            <tr class="balance-due"><td class="label">Balance Due</td><td class="value">₹{{ number_format($invoice->balance_due, 2) }}</td></tr>
-            @endif
+    @if($trips->isNotEmpty())
+        <div class="section-title">Trip summary</div>
+        <table class="summary-table">
+            <tr>
+                <td class="summary-cell">
+                    <div class="label">Total billable trip records</div>
+                    <div class="summary-value">{{ $trips->count() }}</div>
+                </td>
+                <td class="summary-cell">
+                    <div class="label">Recorded trip types / counts</div>
+                    <div class="summary-note">
+                        @foreach($tripTypes as $type => $typeTrips)
+                            <div>{{ $type }}: {{ $typeTrips->count() }}</div>
+                        @endforeach
+                    </div>
+                </td>
+                <td class="summary-cell">
+                    <div class="label">Total linked trip amount</div>
+                    <div class="summary-value">₹{{ number_format($tripAmount, 2) }}</div>
+                </td>
+                <td class="summary-cell">
+                    <div class="label">Billing period</div>
+                    <div class="summary-value" style="font-size:9px">{{ $billingPeriod }}</div>
+                </td>
+            </tr>
         </table>
-    </div>
-
-    @if($invoice->notes)
-    <div style="margin-top:16px; font-size:10px; color:#555;">
-        <strong>Notes:</strong> {{ $invoice->notes }}
-    </div>
+        <div class="section-title">Daily trip statement</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:12%">Service date</th>
+                    <th style="width:14%">Vehicle</th>
+                    <th style="width:15%">Driver</th>
+                    <th style="width:32%">Trip type / journey</th>
+                    <th class="center" style="width:6%">Trips</th>
+                    <th class="right" style="width:21%">Trip amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($trips->sortBy(fn ($trip) => $trip->trip_date?->format('Y-m-d') . '|' . $trip->trip_number) as $trip)
+                <tr>
+                    <td>{{ $trip->trip_date?->format('d-m-Y') ?? '—' }}</td>
+                    <td>
+                        <div class="trip-main">{{ $trip->vehicle?->registration_number ?: $trip->vehicle?->name ?: 'Vehicle not recorded' }}</div>
+                        @if($trip->vehicle?->type)<div class="trip-sub">{{ $trip->vehicle->type }}</div>@endif
+                    </td>
+                    <td>{{ $trip->driver_name ?: '—' }}</td>
+                    <td>
+                        <div class="trip-main">{{ trim((string) $trip->trip_type) ?: 'Unspecified' }}</div>
+                        @if($trip->pickup_location || $trip->drop_location)
+                            <div class="trip-sub">{{ $trip->pickup_location ?: '—' }} → {{ $trip->drop_location ?: '—' }}</div>
+                        @elseif($trip->route)
+                            <div class="trip-sub">{{ $trip->route }}</div>
+                        @elseif($trip->description)
+                            <div class="trip-sub">{{ $trip->description }}</div>
+                        @endif
+                    </td>
+                    <td class="center">1</td>
+                    <td class="numeric">₹{{ number_format((float) $trip->total_amount, 2) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @if($manualItems->isNotEmpty())
+            <div class="section-title">Other billed services</div>
+            <table class="data-table">
+                <thead><tr><th>Description</th><th class="right">Qty</th><th class="right">Rate (₹)</th><th class="right">Discount (₹)</th><th class="right">GST</th><th class="right">Amount (₹)</th></tr></thead>
+                <tbody>
+                    @foreach($manualItems as $item)
+                    <tr>
+                        <td>{{ $item->description }}</td>
+                        <td class="numeric">{{ number_format((float) $item->quantity, 2) }}</td>
+                        <td class="numeric">{{ number_format((float) $item->unit_price, 2) }}</td>
+                        <td class="numeric">{{ number_format((float) $item->discount, 2) }}</td>
+                        <td class="numeric">{{ number_format((float) $item->tax_rate, 1) }}%</td>
+                        <td class="numeric">{{ number_format((float) $item->total_amount, 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+    @else
+        <div class="section-title">Invoice items</div>
+        @if($invoice->items->isNotEmpty())
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:31%">Description</th>
+                        <th class="right" style="width:8%">Qty</th>
+                        <th class="right" style="width:12%">Rate (₹)</th>
+                        <th class="right" style="width:11%">Discount (₹)</th>
+                        <th class="right" style="width:13%">Taxable (₹)</th>
+                        <th class="right" style="width:8%">GST</th>
+                        <th class="right" style="width:17%">Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($invoice->items as $item)
+                    <tr>
+                        <td>
+                            <div class="trip-main">{{ $item->vehicle_type ?: $item->description }}</div>
+                            @if($item->route)<div class="trip-sub">Route: {{ $item->route }}</div>@endif
+                        </td>
+                        <td class="numeric">{{ number_format((float) ($item->service_days ?: $item->quantity), 2) }}</td>
+                        <td class="numeric">{{ number_format((float) $item->unit_price, 2) }}</td>
+                        <td class="numeric">{{ number_format((float) $item->discount, 2) }}</td>
+                        <td class="numeric">{{ number_format((float) $item->taxable_amount, 2) }}</td>
+                        <td class="numeric">{{ number_format((float) $item->tax_rate, 1) }}%</td>
+                        <td class="numeric">{{ number_format((float) $item->total_amount, 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @else
+            <div class="empty-note">No invoice line items are available.</div>
+        @endif
     @endif
 
-    <div class="footer-section">
-        @if($invoice->bank_details_snapshot)
-        <div class="bank-details">
-            <strong>Bank Details:</strong><br>
-            @foreach($invoice->bank_details_snapshot as $key => $val)
-            {{ ucfirst($key) }}: {{ $val }}<br>
-            @endforeach
-        </div>
-        @endif
-        @if($profile?->upi_id)
-        <div class="bank-details" style="margin-top:4px">UPI: {{ $profile->upi_id }}</div>
-        @endif
-        @if($invoice->footer)
-        <div class="footer-note">{{ $invoice->footer }}</div>
-        @endif
-        <div class="footer-note" style="margin-top:8px; text-align:center;">This is a computer-generated invoice.</div>
-    </div>
+    <section class="billing-summary">
+    <div class="section-title">Monthly billing and GST summary</div>
+    <table class="header-table billing-area keep-together">
+        <tr>
+            <td class="billing-left">
+                <div class="subheading">Payment terms</div>
+                <div class="muted">{{ $invoice->payment_terms ?: $profile?->default_payment_terms ?: 'As agreed with the customer.' }}</div>
+                @if($invoice->notes)
+                    <div class="notes"><strong>Notes</strong><br>{{ $invoice->notes }}</div>
+                @endif
+                <div class="payment-box">
+                    <div class="subheading">Bank / UPI details</div>
+                    @if(is_array($invoice->bank_details_snapshot) && count($invoice->bank_details_snapshot))
+                        @foreach($invoice->bank_details_snapshot as $key => $value)
+                            @if(is_scalar($value) && $value !== '')
+                                <div class="bank-line">{{ ucfirst(str_replace('_', ' ', $key)) }}: {{ $value }}</div>
+                            @endif
+                        @endforeach
+                    @else
+                        <div class="bank-line">Bank details not provided.</div>
+                    @endif
+                    @if($profile?->upi_id)<div class="bank-line">UPI: {{ $profile->upi_id }}</div>@endif
+                </div>
+            </td>
+            <td class="billing-right">
+                <table class="totals-table">
+                    <tr><td class="muted">Subtotal</td><td class="numeric">₹{{ number_format((float) $invoice->subtotal, 2) }}</td></tr>
+                    @if((float) $invoice->discount_total > 0)
+                    <tr><td class="muted">Discount</td><td class="numeric">− ₹{{ number_format((float) $invoice->discount_total, 2) }}</td></tr>
+                    @endif
+                    <tr><td class="muted">Taxable amount</td><td class="numeric">₹{{ number_format((float) $invoice->taxable_amount, 2) }}</td></tr>
+                    @if((float) $invoice->cgst_amount > 0)<tr><td class="muted">CGST</td><td class="numeric">₹{{ number_format((float) $invoice->cgst_amount, 2) }}</td></tr>@endif
+                    @if((float) $invoice->sgst_amount > 0)<tr><td class="muted">SGST</td><td class="numeric">₹{{ number_format((float) $invoice->sgst_amount, 2) }}</td></tr>@endif
+                    @if((float) $invoice->igst_amount > 0)<tr><td class="muted">IGST</td><td class="numeric">₹{{ number_format((float) $invoice->igst_amount, 2) }}</td></tr>@endif
+                    <tr class="total"><td>Total payable</td><td class="numeric">₹{{ number_format((float) $invoice->total_amount, 2) }}</td></tr>
+                    @if((float) $invoice->amount_paid > 0)<tr><td class="muted">Amount paid</td><td class="numeric">₹{{ number_format((float) $invoice->amount_paid, 2) }}</td></tr>@endif
+                    <tr class="balance"><td>Balance due</td><td class="numeric">₹{{ number_format((float) $invoice->balance_due, 2) }}</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    </section>
+
+    <table class="footer-table">
+        <tr><td colspan="2" class="thank-you">Thank you for choosing {{ $businessName }}.</td></tr>
+        <tr>
+            <td class="signature-cell"><div class="signature-line">Authorized signatory</div></td>
+            <td class="signature-cell"><div class="signature-line">Signature / seal</div></td>
+        </tr>
+    </table>
+    @if($invoice->footer)<div class="footer-note">{{ $invoice->footer }}</div>@endif
+    <div class="footer-note">This is a computer-generated invoice.</div>
 </div>
 </body>
 </html>
