@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Trip;
 use App\Services\InvoiceNumberService;
+use App\Services\PaymentAllocationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -135,6 +136,7 @@ class InvoiceController extends Controller
                     $invoice->tripLinks()->create(['trip_id' => $trip->id]);
                 }
                 Trip::whereIn('id', $trips->modelKeys())->update(['is_invoiced' => true]);
+                app(PaymentAllocationService::class)->allocateInitialPayments($invoice, $trips);
             }
 
             activity()->causedBy(Auth::user())->performedOn($invoice)
@@ -149,7 +151,7 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'payments']);
 
         return response()->json(array_merge($invoice->toArray(), [
             'business_profile' => BusinessProfile::first(['business_name', 'address', 'gstin', 'phone', 'email', 'upi_id', 'default_payment_terms']),
@@ -247,7 +249,7 @@ class InvoiceController extends Controller
 
     public function pdf(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'payments']);
         $profile = BusinessProfile::first();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', compact('invoice', 'profile'));
@@ -266,7 +268,7 @@ class InvoiceController extends Controller
 
     public function pdfSigned(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'payments']);
         $profile = BusinessProfile::first();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', compact('invoice', 'profile'));

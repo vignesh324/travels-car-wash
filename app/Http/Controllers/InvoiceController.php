@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Trip;
 use App\Services\InvoiceNumberService;
+use App\Services\PaymentAllocationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -191,6 +192,7 @@ class InvoiceController extends Controller
                     $invoice->tripLinks()->create(['trip_id' => $tripId]);
                 }
                 Trip::whereIn('id', $trips->modelKeys())->update(['is_invoiced' => true]);
+                app(PaymentAllocationService::class)->allocateInitialPayments($invoice, $trips);
             }
 
             activity()->causedBy(Auth::user())->performedOn($invoice)
@@ -205,7 +207,7 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'payments']);
         $profile = BusinessProfile::first();
 
         return view('invoices.show', compact('invoice', 'profile'));
@@ -300,7 +302,7 @@ class InvoiceController extends Controller
 
     public function pdf(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'payments']);
         $profile  = BusinessProfile::first();
         $filename = 'Invoice-' . str_replace('/', '-', $invoice->invoice_number) . '.pdf';
 
@@ -321,7 +323,7 @@ class InvoiceController extends Controller
 
     public function pdfSigned(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'trips.vehicle', 'allocations.payment']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'payments']);
         $profile  = BusinessProfile::first();
         $filename = 'Invoice-' . str_replace('/', '-', $invoice->invoice_number) . '.pdf';
 

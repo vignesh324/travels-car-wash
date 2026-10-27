@@ -611,6 +611,74 @@ class InvoicePaymentTest extends TestCase
         $this->assertDatabaseHas('invoices', ['id' => $inv->id, 'status' => 'partial', 'amount_paid' => 500]);
     }
 
+    public function test_trip_initial_payment_is_recorded_on_invoice_and_combines_with_later_payment(): void
+    {
+        $trip = $this->makeTrip([
+            'fare_amount' => 500,
+            'amount_received' => 200,
+            'payment_mode' => 'UPI',
+        ]);
+
+        $invoiceResponse = $this->actingAs($this->user)->postJson('/api/invoices', $this->invoicePayload([
+            'trip_ids' => [$trip->id],
+            'items' => [],
+        ]))->assertCreated();
+
+        $invoice = Invoice::findOrFail($invoiceResponse->json('id'));
+        $this->assertSame('200.00', $invoice->amount_paid);
+        $this->assertSame('300.00', $invoice->balance_due);
+        $this->assertSame('partial', $invoice->status);
+
+        $initialPayment = $invoice->allocations()->with('payment')->firstOrFail()->payment;
+        $this->assertSame('200.00', $initialPayment->amount);
+        $this->assertSame('UPI', $initialPayment->payment_method);
+        $this->assertSame($trip->trip_date->toDateString(), $initialPayment->payment_date->toDateString());
+
+        $this->actingAs($this->user)->postJson('/api/payments', [
+            'customer_id' => $this->customer->id,
+            'payment_date' => '2025-06-02',
+            'amount' => 100,
+            'payment_method' => 'Cash',
+            'allocations' => [['invoice_id' => $invoice->id, 'amount' => 100]],
+        ])->assertCreated();
+
+        $invoice->refresh();
+        $this->assertSame('300.00', $invoice->amount_paid);
+        $this->assertSame('200.00', $invoice->balance_due);
+        $this->assertSame(2, $invoice->allocations()->count());
+
+        $this->actingAs($this->user)
+            ->get(route('invoices.show', $invoice->uuid))
+            ->assertOk()
+            ->assertSee($initialPayment->payment_number)
+            ->assertSee('200.00')
+            ->assertSee('Payment history');
+    }
+
+    public function test_web_invoice_creation_allocates_trip_initial_payment(): void
+    {
+        $trip = $this->makeTrip([
+            'fare_amount' => 500,
+            'amount_received' => 150,
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson('/invoices', $this->invoicePayload([
+            'trip_ids' => [$trip->id],
+            'items' => [],
+        ]))->assertCreated();
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $response->json('id'),
+            'amount_paid' => 150,
+            'balance_due' => 350,
+            'status' => 'partial',
+        ]);
+        $this->assertDatabaseHas('payment_allocations', [
+            'invoice_id' => $response->json('id'),
+            'amount' => 150,
+        ]);
+    }
+
     public function test_cannot_over_allocate(): void
     {
         $inv = $this->makeInvoice();
