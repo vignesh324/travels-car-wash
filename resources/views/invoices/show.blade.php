@@ -7,8 +7,11 @@
     $trips = $invoice->trips
         ->sortBy(fn ($trip) => ($trip->trip_date?->format('Y-m-d') ?? '') . '|' . ($trip->trip_number ?? ''))
         ->values();
+    $quickTrips = $invoice->quickTripExecutions
+        ->sortBy(fn ($execution) => ($execution->trip_date?->format('Y-m-d') ?? '') . '|' . ($execution->configuration?->name ?? ''))
+        ->values();
     $tripTypes = $trips->countBy(fn ($trip) => trim((string) $trip->trip_type) !== '' ? trim((string) $trip->trip_type) : 'Not recorded');
-    $tripDates = $trips->pluck('trip_date')->filter();
+    $tripDates = $trips->pluck('trip_date')->merge($quickTrips->pluck('trip_date'))->filter();
     $billingPeriod = $tripDates->isNotEmpty()
         ? $tripDates->min()->format('M j, Y') . ($tripDates->min()->toDateString() === $tripDates->max()->toDateString() ? '' : ' – ' . $tripDates->max()->format('M j, Y'))
         : 'Service period not recorded';
@@ -81,7 +84,7 @@
                 @if($businessGstin)<p class="mb-0"><strong>GSTIN:</strong> {{ $businessGstin }}</p>@endif
             </div>
             <div class="invoice-meta text-md-end">
-                <p class="invoice-label mb-1">{{ $trips->isNotEmpty() ? 'Monthly corporate taxi invoice' : 'Tax invoice' }}</p>
+                <p class="invoice-label mb-1">{{ $trips->isNotEmpty() || $quickTrips->isNotEmpty() ? 'Travel services invoice' : 'Tax invoice' }}</p>
                 <h1 class="h4 fw-bold mb-2">{{ $invoice->invoice_number }}</h1>
                 <div class="small text-secondary">
                     Invoice date: {{ $invoice->invoice_date?->format('M j, Y') ?? '—' }}<br>
@@ -167,11 +170,48 @@
             </section>
         @endif
 
+        @if($quickTrips->isNotEmpty())
+            <section class="invoice-section py-4 border-bottom" aria-labelledby="quick-trip-statement-heading">
+                <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+                    <div>
+                        <p class="invoice-label mb-1">Linked Quick Trip statement</p>
+                        <h2 id="quick-trip-statement-heading" class="h6 fw-bold mb-0">Quick Trip execution details</h2>
+                    </div>
+                    <div class="small text-secondary">{{ $quickTrips->count() }} execution record(s) · {{ $billingPeriod }}</div>
+                </div>
+                <div class="table-responsive invoice-table-wrap">
+                    <table class="table table-sm align-middle invoice-table mb-0">
+                        <thead>
+                            <tr><th>Service date</th><th>Quick Trip</th><th>Pickup location</th><th>Drop location</th><th class="text-end">Pickup count</th><th class="text-end">Drop count</th><th class="text-end">Rate</th><th class="text-end">Amount</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach($quickTrips as $execution)
+                                @php
+                                    $rate = (float) ($execution->per_trip_charge ?? $execution->configuration?->per_trip_charge ?? 0);
+                                    $amount = ($execution->pickup_count + $execution->drop_count) * $rate;
+                                @endphp
+                                <tr>
+                                    <td>{{ $execution->trip_date?->format('M j, Y') ?? '—' }}</td>
+                                    <td>{{ $execution->configuration?->name ?? 'Quick Trip' }}</td>
+                                    <td>{{ $execution->configuration?->pickup_location ?? '—' }}</td>
+                                    <td>{{ $execution->configuration?->drop_location ?? '—' }}</td>
+                                    <td class="text-end">{{ $execution->pickup_count }}</td>
+                                    <td class="text-end">{{ $execution->drop_count }}</td>
+                                    <td class="text-end">{{ $formatMoney($rate) }}</td>
+                                    <td class="text-end fw-semibold">{{ $formatMoney($amount) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
+
         <section class="invoice-section py-4 border-bottom" aria-labelledby="items-heading">
             <p class="invoice-label mb-1">Invoice accounting</p>
             <h2 id="items-heading" class="h6 fw-bold mb-2">Persisted invoice line items</h2>
-            @if($trips->isNotEmpty())
-                <p class="small text-secondary mb-3">These billing lines include trip charges summarized in the operational statement above.</p>
+            @if($trips->isNotEmpty() || $quickTrips->isNotEmpty())
+                <p class="small text-secondary mb-3">These billing lines include travel and Quick Trip charges summarized in the statements above.</p>
             @endif
             @if($detailItems->isNotEmpty())
                 <div class="table-responsive invoice-table-wrap">

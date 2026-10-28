@@ -191,6 +191,8 @@ class InvoicePaymentTest extends TestCase
                 str_contains($html, 'id="invoice-form"')
                 && str_contains($html, 'id="inp_inv_customer_id"')
                 && str_contains($html, 'id="inv-trip-date-from"')
+                && str_contains($html, 'id="inv-quick-trips-list"')
+                && str_contains($html, 'id="inv-quick-trip-summary"')
                 && str_contains($html, 'id="inv-lines-wrap"')
                 && str_contains($html, 'id="inv-save-btn"')
             );

@@ -79,7 +79,7 @@ class TripController extends Controller
 
     public function show(Trip $trip)
     {
-        return response()->json($trip->load(['vehicle', 'customer']));
+        return response()->json($trip->load(['vehicle', 'customer', 'quickTripExecution.configuration']));
     }
 
     public function update(Request $request, Trip $trip)

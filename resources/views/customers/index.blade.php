@@ -8,7 +8,10 @@
       <h2 class="h2 fw-bold mb-1">Customers</h2>
       <p class="small text-muted mb-0" id="cust-count" aria-live="polite"></p>
     </div>
-    <x-action-button action="customers.add" label="Add Customer" size="" class="px-4 py-2 fw-semibold rounded-2" />
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ route('customers.quick-trips') }}" class="btn btn-outline-primary px-4 py-2 fw-semibold rounded-2">Quick Trip Configurations</a>
+      <x-action-button action="customers.add" label="Add Customer" size="" class="px-4 py-2 fw-semibold rounded-2" />
+    </div>
   </header>
 
   <section class="card mb-3" aria-labelledby="customer-filter-title">

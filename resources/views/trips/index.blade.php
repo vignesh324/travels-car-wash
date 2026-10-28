@@ -8,7 +8,9 @@
       <h2 class="h2 fw-bold mb-1">Trips</h2>
       <p class="small text-muted mb-0 mt-1" id="trip-count" aria-live="polite"></p>
     </div>
-    <x-action-button action="trips.add" label="Add Trip"  />
+    <div class="d-flex flex-wrap gap-2">
+      <x-action-button action="trips.add" label="Add Trip" />
+    </div>
   </header>
 
   <section class="card mb-3" aria-labelledby="trip-filters-heading">
@@ -74,6 +76,7 @@
             <th>Vehicle</th>
             <th>Customer</th>
             <th>Type</th>
+            <th>Direction</th>
             <th>Route</th>
             <th class="text-end">Amount</th>
             <th>Status</th>
@@ -130,6 +133,7 @@ function initTripsTable() {
       { data: 'vehicle', orderable: false, searchable: false, render: v => v ? tripHtml(v.name) : '—' },
       { data: 'customer', orderable: false, searchable: false, render: v => v ? tripHtml(v.company_name || v.name) : '<span class="fst-italic text-muted">Walk-in</span>' },
       { data: 'trip_type' },
+      { data: 'quick_trip_direction', render: v => v ? badge(v === 'pickup' ? 'Pickup' : 'Drop', 'blue') : '—' },
       { data: 'route', render: v => tripHtml(v || '—') },
       { data: 'total_amount', className: 'text-end', render: v => `<span class="fw-semibold">${fmt.currency(v)}</span>` },
       { data: 'status', render: (v, _, row) =>
@@ -265,6 +269,7 @@ async function viewTrip(uuid) {
         <div class="row row-cols-1 row-cols-sm-2 gap-3">
           <div><span class="text-muted">Date:</span> <span class="fw-medium ml-1">${fmt.date(t.trip_date)}</span></div>
           <div><span class="text-muted">Type:</span> <span class="fw-medium ml-1">${tripHtml(t.trip_type)}</span></div>
+          ${t.quick_trip_direction ? `<div><span class="text-muted">Quick Trip Direction:</span> <span class="fw-medium ml-1">${tripHtml(t.quick_trip_direction)}</span></div>` : ''}
           <div><span class="text-muted">Vehicle:</span> <span class="fw-medium ml-1">${tripHtml(t.vehicle ? t.vehicle.name : '—')}</span></div>
           <div><span class="text-muted">Driver:</span> <span class="fw-medium ml-1">${tripHtml(t.driver_name || '—')}</span></div>
           <div><span class="text-muted">Customer:</span> <span class="fw-medium ml-1">${tripHtml(custName)}</span></div>

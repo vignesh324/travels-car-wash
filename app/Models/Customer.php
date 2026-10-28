@@ -51,6 +51,11 @@ class Customer extends Model
         return $this->hasMany(Trip::class);
     }
 
+    public function quickTripConfigurations()
+    {
+        return $this->hasMany(QuickTripConfiguration::class);
+    }
+
     public function invoices()
     {
         return $this->hasMany(Invoice::class);

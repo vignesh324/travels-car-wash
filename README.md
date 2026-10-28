@@ -46,6 +46,8 @@ A complete, production-ready, mobile-first web application designed for small bu
 | `vehicles` | Fleet records (registration, fuel, odometer, document expiries) |
 | `customers` | Individual, Corporate, and Walk-in customers with ledger |
 | `trips` | Daily trip log, start/end odometer, fare, tax, invoiced flag |
+| `quick_trip_configurations` | Customer-specific reusable pickup/drop routes and per-trip charges |
+| `quick_trip_executions` | Date- and configuration-specific generated pickup/drop quantities |
 | `expense_categories` | Categorization for vehicle and business expenses |
 | `vehicle_expenses` | Fuel, repairs, maintenance, wages linked to vehicles |
 | `business_expenses` | Rent, electricity, car wash supplies, general overhead |
@@ -278,6 +280,8 @@ gunzip < /var/backups/travels-car-wash/db_YYYYMMDD_HHMMSS.sql.gz | mysql -u your
 ## 8. Mobile Quick Actions
 
 - Instant 1-tap entry shortcuts for: `Add Trip`, `Add Expense`, `Create Invoice`, `Record Payment`, and `Create Car Wash Bill`.
+- Manage customer configurations from **Customers → Quick Trip Configurations**. Configure each route once, then use **Trips → Quick Trip Execution** to review saved date-specific pickup/drop counts, create an execution, or reconcile counts; this does not create individual records in the Trips table.
+- Quick Trip execution records appear in the invoice workflow through customer and billing-period selection. Invoices use the per-trip rate saved with the execution and retain a link to the source record, so later configuration rate changes do not alter historical billing. Executions already linked to an invoice cannot have their counts changed.
 
 ## 9. Security Checklist
 

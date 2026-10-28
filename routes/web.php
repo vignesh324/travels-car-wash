@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\QuickTripController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TripController;
@@ -61,11 +62,23 @@ Route::middleware('auth')->group(function () {
     // Customers
     Route::get('customers/add-edit/{uuid?}', [CustomerController::class, 'addEdit'])->name('customers.addEdit');
     Route::get('customers/getData', [CustomerController::class, 'getData'])->name('customers.getData');
+    Route::get('customers/quick-trips/add-edit/{configuration?}', [QuickTripController::class, 'configurationAddEdit'])->name('quick-trip-configurations.addEdit');
+    Route::get('customers/quick-trips/getData', [QuickTripController::class, 'configurationData'])->name('quick-trip-configurations.getData');
+    Route::get('customers/quick-trips', [QuickTripController::class, 'configurations'])->name('customers.quick-trips');
+    Route::get('quick-trip-configurations/{configuration}', [QuickTripController::class, 'showConfiguration'])->name('quick-trip-configurations.show');
+    Route::post('quick-trip-configurations', [QuickTripController::class, 'storeConfiguration'])->name('quick-trip-configurations.store');
+    Route::put('quick-trip-configurations/{configuration}', [QuickTripController::class, 'updateConfiguration'])->name('quick-trip-configurations.update');
+    Route::post('quick-trip-configurations/{configuration}/toggle-status', [QuickTripController::class, 'toggleConfiguration'])->name('quick-trip-configurations.toggle-status');
     Route::resource('customers', CustomerController::class);
     Route::post('customers/{uuid}/restore',          [CustomerController::class, 'restore'])->name('customers.restore');
     Route::get('customers/{customer}/statement',     [CustomerController::class, 'statement'])->name('customers.statement');
 
     // Trips
+    Route::get('quick-trip-executions', [QuickTripController::class, 'executionIndex'])->name('quick-trip-executions.index');
+    Route::get('quick-trip-executions/getData', [QuickTripController::class, 'executionData'])->name('quick-trip-executions.getData');
+    Route::get('trips/quick-execution', [QuickTripController::class, 'execution'])->name('trips.quick-execution');
+    Route::get('trips/quick-execution/configurations', [QuickTripController::class, 'activeConfigurations'])->name('trips.quick-execution.configurations');
+    Route::post('trips/quick-execution/generate', [QuickTripController::class, 'generate'])->name('trips.quick-execution.generate');
     Route::get('trips/add-edit/{uuid?}', [TripController::class, 'addEdit'])->name('trips.addEdit');
     Route::get('trips/getData', [TripController::class, 'getData'])->name('trips.getData');
     Route::resource('trips', TripController::class);
@@ -97,6 +110,7 @@ Route::middleware('auth')->group(function () {
     Route::get('invoices/add-edit/{uuid?}', [InvoiceController::class, 'addEdit'])->name('invoices.addEdit');
     Route::get('invoices/getData', [InvoiceController::class, 'getData'])->name('invoices.getData');
     Route::get('invoices/eligible-trips', [InvoiceController::class, 'eligibleTrips'])->name('invoices.eligible-trips');
+    Route::get('invoices/eligible-quick-trips', [InvoiceController::class, 'eligibleQuickTrips'])->name('invoices.eligible-quick-trips');
     Route::resource('invoices', InvoiceController::class)->except(['destroy']);
     Route::post('invoices/{invoice}/cancel',   [InvoiceController::class, 'cancel'])->name('invoices.cancel');
     Route::get('invoices/{invoice}/pdf',       [InvoiceController::class, 'pdf'])->name('invoices.pdf');

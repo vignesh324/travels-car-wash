@@ -78,6 +78,17 @@ class Invoice extends Model
         return $this->belongsToMany(Trip::class, 'invoice_trip_links');
     }
 
+    public function quickTripLinks()
+    {
+        return $this->hasMany(InvoiceQuickTripLink::class);
+    }
+
+    public function quickTripExecutions()
+    {
+        return $this->belongsToMany(QuickTripExecution::class, 'invoice_quick_trip_links')
+            ->withTimestamps();
+    }
+
     public function payments()
     {
         return $this->belongsToMany(Payment::class, 'payment_allocations')
@@ -180,6 +191,28 @@ class Invoice extends Model
                 ];
             })
             ->values()
+            ->all();
+    }
+
+    public static function quickTripSummaryItems(Collection $executions): array
+    {
+        return $executions
+            ->map(function (QuickTripExecution $execution) {
+                $configuration = $execution->configuration;
+                $count = $execution->pickup_count + $execution->drop_count;
+
+                return [
+                    'description' => 'Quick Trip - '.($configuration?->name ?? 'Configured trip'),
+                    'source' => 'travels',
+                    'vehicle_type' => null,
+                    'route' => $configuration?->route,
+                    'service_days' => null,
+                    'quantity' => $count,
+                    'unit_price' => (float) ($execution->per_trip_charge ?? $configuration?->per_trip_charge ?? 0),
+                    'discount' => 0,
+                    'tax_rate' => 0,
+                ];
+            })
             ->all();
     }
 

@@ -63,10 +63,12 @@
 <body>
 @php
     $trips = $invoice->trips ?? collect();
+    $quickTrips = $invoice->quickTripExecutions ?? collect();
     $tripTypes = $trips->groupBy(fn ($trip) => trim((string) $trip->trip_type) ?: 'Unspecified');
     $tripAmount = $trips->sum(fn ($trip) => (float) $trip->total_amount);
-    $firstTripDate = $trips->min('trip_date');
-    $lastTripDate = $trips->max('trip_date');
+    $serviceDates = $trips->pluck('trip_date')->merge($quickTrips->pluck('trip_date'))->filter();
+    $firstTripDate = $serviceDates->min();
+    $lastTripDate = $serviceDates->max();
     $billingPeriod = $firstTripDate && $lastTripDate
         ? ($firstTripDate->isSameDay($lastTripDate) ? $firstTripDate->format('d-m-Y') : $firstTripDate->format('d-m-Y') . ' to ' . $lastTripDate->format('d-m-Y'))
         : 'Service period not recorded';
@@ -91,7 +93,7 @@
                 </div>
             </td>
             <td style="width:45%; vertical-align:top">
-                <div class="invoice-heading">{{ $trips->isNotEmpty() ? 'MONTHLY CORPORATE TAXI INVOICE' : 'TAX INVOICE' }}</div>
+                <div class="invoice-heading">{{ $trips->isNotEmpty() || $quickTrips->isNotEmpty() ? 'TRAVEL SERVICES INVOICE' : 'TAX INVOICE' }}</div>
                 <div class="invoice-number">{{ $invoice->invoice_number }}</div>
                 <div class="invoice-meta">Invoice date: {{ $invoice->invoice_date?->format('d-m-Y') ?? '—' }}</div>
                 <div class="invoice-meta">Billing period: {{ $billingPeriod }}</div>
@@ -124,6 +126,42 @@
             </td>
         </tr>
     </table>
+
+    @if($quickTrips->isNotEmpty())
+        <div class="section-title">Quick Trip execution statement</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:12%">Service date</th>
+                    <th style="width:20%">Quick Trip</th>
+                    <th style="width:19%">Pickup location</th>
+                    <th style="width:19%">Drop location</th>
+                    <th class="right" style="width:7%">Pickup</th>
+                    <th class="right" style="width:7%">Drop</th>
+                    <th class="right" style="width:8%">Rate (₹)</th>
+                    <th class="right" style="width:8%">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($quickTrips as $execution)
+                    @php
+                        $rate = (float) ($execution->per_trip_charge ?? $execution->configuration?->per_trip_charge ?? 0);
+                        $amount = ($execution->pickup_count + $execution->drop_count) * $rate;
+                    @endphp
+                    <tr>
+                        <td>{{ $execution->trip_date?->format('d-m-Y') ?? '—' }}</td>
+                        <td>{{ $execution->configuration?->name ?? 'Quick Trip' }}</td>
+                        <td>{{ $execution->configuration?->pickup_location ?? '—' }}</td>
+                        <td>{{ $execution->configuration?->drop_location ?? '—' }}</td>
+                        <td class="numeric">{{ $execution->pickup_count }}</td>
+                        <td class="numeric">{{ $execution->drop_count }}</td>
+                        <td class="numeric">{{ number_format($rate, 2) }}</td>
+                        <td class="numeric">{{ number_format($amount, 2) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
 
     @if($trips->isNotEmpty())
         <div class="section-title">Trip summary</div>

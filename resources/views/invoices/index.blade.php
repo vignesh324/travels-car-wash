@@ -260,6 +260,7 @@
             let invTable = null,
                 invCancelUuid = null;
             let invTrips = [];
+            let invQuickTrips = [];
             let invCompactLayout = null;
             const invCompactColumns = [3, 5, 6];
             const invCompactMedia = window.matchMedia('(min-width: 768px) and (max-width: 1199.98px)');
@@ -527,6 +528,7 @@
                     const inv = response.invoice;
                     const items = inv?.items || [];
                     invTrips = [];
+                    invQuickTrips = [];
                     if (items.length) items.forEach(item => addInvLine(item));
                     else addInvLine(null);
                     updateInvTotal();
@@ -544,10 +546,17 @@
                     .value));
             }
 
+            function selectedInvQuickTripIds() {
+                return Array.from(document.querySelectorAll('input[name="quick_trip_ids"]:checked'))
+                    .map(input => Number(input.value));
+            }
+
             function updateInvTripSummary() {
                 const selected = invTrips.filter(trip => selectedInvTripIds().includes(Number(trip.id)));
+                const selectedQuickTrips = invQuickTrips.filter(execution =>
+                    selectedInvQuickTripIds().includes(Number(execution.id)));
                 const manualItems = document.getElementById('inv-manual-items');
-                if (manualItems) manualItems.classList.toggle('d-none', selected.length > 0);
+                if (manualItems) manualItems.classList.toggle('d-none', selected.length > 0 || selectedQuickTrips.length > 0);
 
                 const groups = new Map();
                 selected.forEach(trip => {
@@ -573,18 +582,41 @@
       <tbody>${Array.from(groups.values()).map(group => `<tr><td>${invHtml(group.vehicleType)}</td><td>${invHtml(group.route || '—')}</td><td class="text-end">${group.days}</td><td class="text-end">${fmt.currency(group.amount)}</td></tr>`).join('')}</tbody>
       <tfoot><tr><th colspan="3" class="text-end">Total</th><th class="text-end">${fmt.currency(selected.reduce((sum, trip) => sum + Number(trip.total_amount || 0), 0))}</th></tr></tfoot>
     </table></div>` : '';
+
+                const quickSummary = document.getElementById('inv-quick-trip-summary');
+                if (!quickSummary) return;
+                quickSummary.innerHTML = selectedQuickTrips.length ? `
+    <p class="small fw-semibold mb-2">${selectedQuickTrips.length} Quick Trip execution(s) selected</p>
+    <div class="table-responsive"><table class="table table-sm table-bordered mb-1">
+      <thead><tr><th>Date</th><th>Quick Trip</th><th>Pickup / Drop</th><th class="text-end">Count</th><th class="text-end">Rate</th><th class="text-end">Amount</th></tr></thead>
+      <tbody>${selectedQuickTrips.map(execution => `<tr>
+        <td>${invHtml(fmt.date(execution.trip_date))}</td>
+        <td>${invHtml(execution.configuration?.name || 'Quick Trip')}</td>
+        <td>${Number(execution.pickup_count)} / ${Number(execution.drop_count)}</td>
+        <td class="text-end">${Number(execution.total_count)}</td>
+        <td class="text-end">${fmt.currency(execution.per_trip_charge)}</td>
+        <td class="text-end">${fmt.currency(execution.total_amount)}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr><th colspan="5" class="text-end">Total</th><th class="text-end">${fmt.currency(selectedQuickTrips.reduce((sum, execution) => sum + Number(execution.total_amount || 0), 0))}</th></tr></tfoot>
+    </table></div>` : '';
             }
 
             async function loadInvTrips() {
                 const customerId = document.getElementById('inp_inv_customer_id')?.value;
                 const wrap = document.getElementById('inv-trips-list');
                 const status = document.getElementById('inv-trip-status');
+                const quickWrap = document.getElementById('inv-quick-trips-list');
+                const quickStatus = document.getElementById('inv-quick-trip-status');
                 if (!wrap || !status) return;
                 invTrips = [];
+                invQuickTrips = [];
                 document.getElementById('inv-trip-summary').innerHTML = '';
+                document.getElementById('inv-quick-trip-summary').innerHTML = '';
                 if (!customerId) {
                     wrap.innerHTML = '';
+                    quickWrap.innerHTML = '';
                     status.textContent = 'Select a customer to load trips.';
+                    quickStatus.textContent = 'Select a customer to load Quick Trips.';
                     updateInvTripSummary();
                     return;
                 }
@@ -592,13 +624,22 @@
                 const dateFrom = document.getElementById('inv-trip-date-from').value;
                 const dateTo = document.getElementById('inv-trip-date-to').value;
                 status.textContent = 'Loading trips…';
+                quickStatus.textContent = 'Loading Quick Trip executions…';
                 wrap.innerHTML = '';
+                quickWrap.innerHTML = '';
                 try {
-                    const response = await window.api.get('/invoices/eligible-trips', {
-                        customer_id: customerId,
-                        date_from: dateFrom,
-                        date_to: dateTo,
-                    });
+                    const [response, quickResponse] = await Promise.all([
+                        window.api.get('/invoices/eligible-trips', {
+                            customer_id: customerId,
+                            date_from: dateFrom,
+                            date_to: dateTo,
+                        }),
+                        window.api.get('/invoices/eligible-quick-trips', {
+                            customer_id: customerId,
+                            date_from: dateFrom,
+                            date_to: dateTo,
+                        }),
+                    ]);
                     if (!response.ok) {
                         const errors = await extractErrors(response);
                         status.textContent = errors._ || 'Unable to load trips for this date range.';
@@ -622,6 +663,26 @@
                                           ${trip.route ? `<span class="text-muted">Route: ${invHtml(trip.route)}</span>` : ''}
                                           <span class="ms-auto fw-semibold">${fmt.currency(trip.total_amount)}</span>
                                         </label>`).join('')}
+      </div>` : '';
+                    if (!quickResponse.ok) {
+                        const errors = await extractErrors(quickResponse);
+                        quickStatus.textContent = errors._ || 'Unable to load Quick Trips for this date range.';
+                        return;
+                    }
+                    invQuickTrips = await quickResponse.json();
+                    quickStatus.textContent = invQuickTrips.length
+                        ? `${invQuickTrips.length} uninvoiced Quick Trip execution(s) available.`
+                        : 'No uninvoiced Quick Trip executions found for this customer and date range.';
+                    quickWrap.innerHTML = invQuickTrips.length ? `
+      <div class="border rounded-2 overflow-auto">
+        ${invQuickTrips.map(execution => `<label class="d-flex flex-wrap align-items-center gap-2 px-3 py-2 small border-bottom mb-0">
+          <input type="checkbox" name="quick_trip_ids" value="${invHtml(execution.id)}" class="form-check-input" onchange="updateInvTripSummary()">
+          <span>${invHtml(fmt.date(execution.trip_date))}</span>
+          <span class="fw-medium">${invHtml(execution.configuration?.name || 'Quick Trip')}</span>
+          <span>${Number(execution.pickup_count)} pickup / ${Number(execution.drop_count)} drop</span>
+          <span class="ms-auto">${Number(execution.total_count)} trips × ${fmt.currency(execution.per_trip_charge)}</span>
+          <span class="fw-semibold">${fmt.currency(execution.total_amount)}</span>
+        </label>`).join('')}
       </div>` : '';
                     updateInvTripSummary();
                 } catch (error) {
@@ -662,14 +723,15 @@
                     place_of_supply: document.getElementById('inp_inv_place_of_supply')?.value || null,
                     payment_terms: document.getElementById('inp_inv_payment_terms')?.value || null,
                     notes: document.getElementById('inp_inv_notes')?.value || null,
-                    items: selectedInvTripIds().length ? [] : items,
+                    items: (selectedInvTripIds().length || selectedInvQuickTripIds().length) ? [] : items,
                 };
 
                 if (!uuid) {
                     payload.customer_id = parseInt(document.getElementById('inp_inv_customer_id')?.value) || null;
                     payload.source = document.getElementById('inp_inv_source')?.value || 'travels';
                     payload.trip_ids = selectedInvTripIds();
-                    if (payload.trip_ids.length) payload.source = 'travels';
+                    payload.quick_trip_ids = selectedInvQuickTripIds();
+                    if (payload.trip_ids.length || payload.quick_trip_ids.length) payload.source = 'travels';
                     payload.trip_date_from = document.getElementById('inv-trip-date-from')?.value || null;
                     payload.trip_date_to = document.getElementById('inv-trip-date-to')?.value || null;
                 }
@@ -697,7 +759,7 @@
             function cancelInvoice(uuid, number) {
                 invCancelUuid = uuid;
                 document.getElementById('inv-cancel-msg').textContent =
-                    'Cancel invoice ' + number + '? Linked trips will be unlinked.';
+                    'Cancel invoice ' + number + '? Linked trips will be released, and Quick Trip executions can be billed again.';
                 document.getElementById('inv-cancel-reason').value = '';
                 openModal('modal-inv-cancel');
             }

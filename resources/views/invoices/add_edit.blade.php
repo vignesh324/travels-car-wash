@@ -85,13 +85,21 @@
                         <input class="form-control" type="date" id="inv-trip-date-to" value="{{ now()->toDateString() }}">
                     </div>
                     <div class="col-12 col-md-4 d-flex align-items-end">
-                        <button type="button" class="btn btn-outline-primary w-100" onclick="loadInvTrips()">Load customer trips</button>
+                        <button type="button" class="btn btn-outline-primary w-100" onclick="loadInvTrips()">Load billable trips</button>
                     </div>
                 </div>
                 <div class="small text-muted mt-2" id="inv-trip-status" aria-live="polite">Select a customer to load trips.</div>
                 <p id="err_inv_trip_ids" class="field-error small text-danger mt-1"></p>
                 <div id="inv-trips-list" class="mt-2"></div>
                 <div id="inv-trip-summary" class="mt-3"></div>
+                <div class="border-top mt-3 pt-3">
+                    <p class="small fw-semibold text-muted text-uppercase mb-1">Quick Trip executions</p>
+                    <p class="small text-muted">Select saved Quick Trip counts for the customer and billing period. The saved per-trip rate is used.</p>
+                    <div class="small text-muted" id="inv-quick-trip-status" aria-live="polite">Select a customer to load Quick Trips.</div>
+                    <p id="err_inv_quick_trip_ids" class="field-error small text-danger mt-1"></p>
+                    <div id="inv-quick-trips-list" class="mt-2"></div>
+                    <div id="inv-quick-trip-summary" class="mt-3"></div>
+                </div>
             </section>
         @endunless
 

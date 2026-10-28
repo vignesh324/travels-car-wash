@@ -37,7 +37,8 @@ class ReportsController extends Controller
     {
         [$from, $to] = $this->dateRange($request);
 
-        $trips = Trip::whereBetween('trip_date', [$from, $to])
+        $trips = Trip::whereDate('trip_date', '>=', $from)
+            ->whereDate('trip_date', '<=', $to)
             ->where('status', 'completed')
             ->selectRaw('trip_date as date, SUM(total_amount) as revenue, SUM(amount_received) as collected, COUNT(*) as count')
             ->groupBy('trip_date')->orderBy('trip_date')->get();
@@ -46,8 +47,8 @@ class ReportsController extends Controller
             ->selectRaw('DATE(service_datetime) as date, SUM(total_amount) as revenue, SUM(amount_paid) as collected, COUNT(*) as count')
             ->groupBy(DB::raw('DATE(service_datetime)'))->orderBy('date')->get();
 
-        $tripTotal     = Trip::whereBetween('trip_date', [$from, $to])->where('status', 'completed')->sum('total_amount');
-        $tripCollected = Trip::whereBetween('trip_date', [$from, $to])->where('status', 'completed')->sum('amount_received');
+        $tripTotal     = Trip::whereDate('trip_date', '>=', $from)->whereDate('trip_date', '<=', $to)->where('status', 'completed')->sum('total_amount');
+        $tripCollected = Trip::whereDate('trip_date', '>=', $from)->whereDate('trip_date', '<=', $to)->where('status', 'completed')->sum('amount_received');
         $cwTotal       = CarWashTransaction::whereBetween(DB::raw('DATE(service_datetime)'), [$from, $to])->sum('total_amount');
         $cwCollected   = CarWashTransaction::whereBetween(DB::raw('DATE(service_datetime)'), [$from, $to])->sum('amount_paid');
 
@@ -100,7 +101,8 @@ class ReportsController extends Controller
     {
         [$from, $to] = $this->dateRange($request);
 
-        $trips = Trip::whereBetween('trip_date', [$from, $to])
+        $trips = Trip::whereDate('trip_date', '>=', $from)
+            ->whereDate('trip_date', '<=', $to)
             ->with(['vehicle:id,name,registration_number', 'customer:id,name,company_name,type'])
             ->when($request->vehicle_id,    fn($q, $v) => $q->where('vehicle_id', $v))
             ->when($request->customer_id, fn($q, $v) => $q->where('customer_id', $v))
@@ -109,7 +111,8 @@ class ReportsController extends Controller
             ->when($request->payment_status,fn($q, $v) => $q->where('payment_status', $v))
             ->orderByDesc('trip_date')->paginate(50);
 
-        $summary = Trip::whereBetween('trip_date', [$from, $to])
+        $summary = Trip::whereDate('trip_date', '>=', $from)
+            ->whereDate('trip_date', '<=', $to)
             ->when($request->vehicle_id,  fn($q, $v) => $q->where('vehicle_id', $v))
             ->when($request->customer_id, fn($q, $v) => $q->where('customer_id', $v))
             ->when($request->status,      fn($q, $v) => $q->where('status', $v))
@@ -183,7 +186,8 @@ class ReportsController extends Controller
     {
         [$from, $to] = $this->dateRange($request);
 
-        $trips = Trip::whereBetween('trip_date', [$from, $to])
+        $trips = Trip::whereDate('trip_date', '>=', $from)
+            ->whereDate('trip_date', '<=', $to)
             ->with(['vehicle:id,name,registration_number', 'customer:id,name,company_name,type'])
             ->when($request->vehicle_id, fn($q, $v) => $q->where('vehicle_id', $v))
             ->when($request->customer_id, fn($q, $v) => $q->where('customer_id', $v))
@@ -194,7 +198,7 @@ class ReportsController extends Controller
             public function __construct(private $data) {}
             public function collection(): Enumerable { return $this->data; }
             public function headings(): array {
-                return ['Trip #', 'Date', 'Vehicle', 'Customer', 'Type', 'Pickup', 'Drop', 'Route', 'Fare', 'Total', 'Received', 'Balance', 'Status', 'Payment Status'];
+                return ['Trip #', 'Date', 'Vehicle', 'Customer', 'Type', 'Quick Trip Direction', 'Pickup', 'Drop', 'Route', 'Fare', 'Total', 'Received', 'Balance', 'Status', 'Payment Status'];
             }
             public function map($row): array {
                 return [
@@ -203,6 +207,7 @@ class ReportsController extends Controller
                     $row->vehicle?->name ?? '',
                     $row->customer?->displayName() ?? 'Walk-in',
                     $row->trip_type,
+                    $row->quick_trip_direction ?? '',
                     $row->pickup_location ?? '',
                     $row->drop_location ?? '',
                     $row->route ?? '',

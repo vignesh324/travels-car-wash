@@ -6,9 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\BusinessProfile;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\QuickTripExecution;
 use App\Models\Trip;
 use App\Services\InvoiceNumberService;
-use App\Services\PaymentAllocationService;
+use App\Services\TripPaymentAllocationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,56 @@ use Yajra\DataTables\Facades\DataTables;
 
 class InvoiceController extends Controller
 {
+    public function eligibleTrips(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+        ]);
+
+        return response()->json(
+            Trip::query()
+                ->where('customer_id', $validated['customer_id'])
+                ->where('status', 'completed')
+                ->where('is_invoiced', false)
+                ->whereDate('trip_date', '>=', $validated['date_from'])
+                ->whereDate('trip_date', '<=', $validated['date_to'])
+                ->with('vehicle:id,name,type,registration_number')
+                ->orderBy('trip_date')
+                ->get(['id', 'trip_number', 'trip_date', 'customer_id', 'vehicle_id', 'route', 'pickup_location', 'drop_location', 'total_amount'])
+        );
+    }
+
+    public function eligibleQuickTrips(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+        ]);
+
+        return response()->json(
+            QuickTripExecution::query()
+                ->with('configuration:id,name,pickup_location,drop_location,route')
+                ->where('customer_id', $validated['customer_id'])
+                ->whereDate('trip_date', '>=', $validated['date_from'])
+                ->whereDate('trip_date', '<=', $validated['date_to'])
+                ->whereRaw('(pickup_count + drop_count) > 0')
+                ->whereDoesntHave('invoices', fn ($query) => $query->where('status', '!=', 'cancelled'))
+                ->orderBy('trip_date')
+                ->get()
+                ->map(fn (QuickTripExecution $execution) => array_merge($execution->toArray(), [
+                    'total_count' => $execution->pickup_count + $execution->drop_count,
+                    'total_amount' => round(
+                        ($execution->pickup_count + $execution->drop_count)
+                            * (float) ($execution->per_trip_charge ?? $execution->configuration?->per_trip_charge ?? 0),
+                        2
+                    ),
+                ]))
+        );
+    }
+
     public function index(Request $request)
     {
         if ($request->boolean('datatable')) {
@@ -36,6 +87,7 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $hasTrips = !empty($request->input('trip_ids', []));
+        $hasQuickTrips = !empty($request->input('quick_trip_ids', []));
         $validated = $request->validate([
             'customer_id'     => 'required|exists:customers,id',
             'invoice_date'    => 'required|date',
@@ -46,9 +98,11 @@ class InvoiceController extends Controller
             'notes'           => 'nullable|string',
             'trip_ids'        => 'nullable|array',
             'trip_ids.*'      => 'integer|distinct|exists:trips,id',
+            'quick_trip_ids'  => 'nullable|array',
+            'quick_trip_ids.*'=> 'integer|distinct|exists:quick_trip_executions,id',
             'trip_date_from'  => 'nullable|date',
             'trip_date_to'    => 'nullable|date|after_or_equal:trip_date_from',
-            'items'           => $hasTrips ? 'nullable|array' : 'required|array|min:1',
+            'items'           => ($hasTrips || $hasQuickTrips) ? 'nullable|array' : 'required|array|min:1',
             'items.*.description' => 'required|string|max:500',
             'items.*.source'      => 'required|in:travels,carwash',
             'items.*.quantity'    => 'required|numeric|min:0.01',
@@ -87,9 +141,32 @@ class InvoiceController extends Controller
                 }
             }
 
-            $items = array_merge($validated['items'] ?? [], Invoice::tripSummaryItems($trips));
+            $quickTrips = new \Illuminate\Database\Eloquent\Collection();
+            if (! empty($validated['quick_trip_ids'])) {
+                $quickTrips = QuickTripExecution::with('configuration')
+                    ->whereIn('id', $validated['quick_trip_ids'])
+                    ->where('customer_id', $validated['customer_id'])
+                    ->whereDate('trip_date', '>=', $validated['trip_date_from'] ?? '1000-01-01')
+                    ->whereDate('trip_date', '<=', $validated['trip_date_to'] ?? '9999-12-31')
+                    ->whereRaw('(pickup_count + drop_count) > 0')
+                    ->whereDoesntHave('invoices', fn ($query) => $query->where('status', '!=', 'cancelled'))
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($quickTrips->count() !== count($validated['quick_trip_ids'])) {
+                    throw ValidationException::withMessages([
+                        'quick_trip_ids' => 'Quick Trip executions must be uninvoiced records for this customer within the selected date range.',
+                    ]);
+                }
+            }
+
+            $items = array_merge(
+                $validated['items'] ?? [],
+                Invoice::tripSummaryItems($trips),
+                Invoice::quickTripSummaryItems($quickTrips)
+            );
             if ($items === []) {
-                throw ValidationException::withMessages(['items' => 'Add at least one invoice item or select trips.']);
+                throw ValidationException::withMessages(['items' => 'Add at least one invoice item or select trips or Quick Trips.']);
             }
             $calc = Invoice::calculateTotals($items, $placeOfSupply, $businessState);
             $number = app(InvoiceNumberService::class)->generate();
@@ -136,7 +213,10 @@ class InvoiceController extends Controller
                     $invoice->tripLinks()->create(['trip_id' => $trip->id]);
                 }
                 Trip::whereIn('id', $trips->modelKeys())->update(['is_invoiced' => true]);
-                app(PaymentAllocationService::class)->allocateInitialPayments($invoice, $trips);
+                app(TripPaymentAllocationService::class)->allocateInitialPayments($invoice, $trips);
+            }
+            foreach ($quickTrips as $quickTrip) {
+                $invoice->quickTripLinks()->create(['quick_trip_execution_id' => $quickTrip->id]);
             }
 
             activity()->causedBy(Auth::user())->performedOn($invoice)
@@ -146,12 +226,16 @@ class InvoiceController extends Controller
             return $invoice;
         });
 
-        return response()->json($invoice->load(['customer:id,name,company_name', 'items']), 201);
+        return response()->json($invoice->load([
+            'customer:id,name,company_name',
+            'items',
+            'quickTripExecutions.configuration',
+        ]), 201);
     }
 
     public function show(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'trips.vehicle', 'payments']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'quickTripExecutions.configuration', 'payments']);
 
         return response()->json(array_merge($invoice->toArray(), [
             'business_profile' => BusinessProfile::first(['business_name', 'address', 'gstin', 'phone', 'email', 'upi_id', 'default_payment_terms']),
@@ -249,7 +333,7 @@ class InvoiceController extends Controller
 
     public function pdf(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'trips.vehicle', 'payments']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'quickTripExecutions.configuration', 'payments']);
         $profile = BusinessProfile::first();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', compact('invoice', 'profile'));
@@ -268,7 +352,7 @@ class InvoiceController extends Controller
 
     public function pdfSigned(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items', 'trips.vehicle', 'payments']);
+        $invoice->load(['customer', 'items', 'trips.vehicle', 'quickTripExecutions.configuration', 'payments']);
         $profile = BusinessProfile::first();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', compact('invoice', 'profile'));

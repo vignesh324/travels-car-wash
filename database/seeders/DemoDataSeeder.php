@@ -12,6 +12,8 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
+use App\Models\QuickTripConfiguration;
+use App\Models\QuickTripExecution;
 use App\Models\Trip;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -47,12 +49,91 @@ class DemoDataSeeder extends Seeder
         DB::transaction(function () use ($user, $profile) {
             $customers = $this->seedCustomers();
             $vehicles = $this->seedVehicles($user);
+            $configurations = $this->seedQuickTripConfigurations($user, $customers);
             $trips = $this->seedTrips($user, $customers, $vehicles);
+            $this->seedQuickTripExecutions($user, $customers, $configurations);
             $invoices = $this->seedInvoices($user, $profile, $customers, $trips);
             $this->seedPayments($user, $customers, $invoices);
             $this->seedExpenses($user, $vehicles);
             $this->seedCarWashTransactions($user, $customers);
         });
+    }
+
+    private function seedQuickTripConfigurations(User $user, array $customers): array
+    {
+        $records = [
+            [
+                'customer' => '9000000101',
+                'name' => 'School Morning Route',
+                'pickup_location' => 'Kovai Valley Public School',
+                'drop_location' => 'School route stops',
+                'route' => 'Saibaba Colony - Gandhipuram - School',
+                'per_trip_charge' => 3000,
+                'remarks' => 'Demo morning school transport configuration.',
+            ],
+            [
+                'customer' => '9000000101',
+                'name' => 'School Afternoon Route',
+                'pickup_location' => 'School route stops',
+                'drop_location' => 'Kovai Valley Public School',
+                'route' => 'School - Gandhipuram - Saibaba Colony',
+                'per_trip_charge' => 3000,
+                'remarks' => 'Demo afternoon school transport configuration.',
+            ],
+        ];
+
+        $configurations = [];
+        foreach ($records as $record) {
+            $customer = $customers[$record['customer']];
+            unset($record['customer']);
+            $configuration = QuickTripConfiguration::updateOrCreate(
+                ['customer_id' => $customer->id, 'name' => $record['name']],
+                array_merge($record, [
+                    'is_active' => true,
+                    'created_by' => $user->id,
+                    'updated_by' => $user->id,
+                ])
+            );
+            $configuration->forceFill([
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ])->save();
+            $configurations[$configuration->name] = $configuration;
+        }
+
+        return $configurations;
+    }
+
+    private function seedQuickTripExecutions(User $user, array $customers, array $configurations): void
+    {
+        $customer = $customers['9000000101'];
+        $tripDate = now()->subDay()->toDateString();
+        $samples = [
+            'School Morning Route' => ['pickup' => 2, 'drop' => 1],
+            'School Afternoon Route' => ['pickup' => 1, 'drop' => 2],
+        ];
+
+        foreach ($samples as $configurationName => $counts) {
+            $configuration = $configurations[$configurationName];
+            $execution = QuickTripExecution::query()
+                ->where('quick_trip_configuration_id', $configuration->id)
+                ->whereDate('trip_date', $tripDate)
+                ->first() ?? new QuickTripExecution([
+                    'quick_trip_configuration_id' => $configuration->id,
+                    'trip_date' => $tripDate,
+                ]);
+            $execution->fill([
+                'customer_id' => $customer->id,
+                'pickup_count' => $counts['pickup'],
+                'drop_count' => $counts['drop'],
+                'per_trip_charge' => $configuration->per_trip_charge,
+            ])->save();
+            $execution->forceFill([
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ])->save();
+
+        }
     }
 
     private function seedCustomers(): array

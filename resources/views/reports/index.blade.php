@@ -191,13 +191,14 @@ function renderReport(data) {
             fmt.date(trip.trip_date),
             rEscape(trip.customer?.company_name || trip.customer?.name || 'Walk-in'),
             rEscape(trip.vehicle?.registration_number || trip.vehicle?.name || '—'),
+            rEscape(trip.quick_trip_direction ? trip.quick_trip_direction[0].toUpperCase() + trip.quick_trip_direction.slice(1) : '—'),
             rEscape(trip.pickup_location || '—'),
             rEscape(trip.drop_location || '—'),
             rEscape(trip.route || '—'),
             rCurrency(trip.total_amount),
             `<span class="badge ${trip.status==='completed'?'text-bg-success':trip.status==='draft'?'text-bg-warning':'text-bg-danger'}">${rEscape(trip.status || '—')}</span>`
         ]);
-        setTable([{label:'Trip #'},{label:'Date'},{label:'Customer'},{label:'Vehicle'},{label:'Pickup'},{label:'Drop'},{label:'Route'},{label:'Amount',right:true},{label:'Status'}],rows);
+        setTable([{label:'Trip #'},{label:'Date'},{label:'Customer'},{label:'Vehicle'},{label:'Direction'},{label:'Pickup'},{label:'Drop'},{label:'Route'},{label:'Amount',right:true},{label:'Status'}],rows);
         renderPagination('report-pagination',Number(data.trips?.current_page || 1),Number(data.trips?.last_page || 1),Number(data.trips?.total || 0),'function(p){reportPage=p;loadReport()}');
     } else if (activeReport === 'invoices') {
         const summary = data.summary || {};

@@ -25,6 +25,7 @@ class MobileShellTest extends TestCase
             ->assertSee('Business Expenses')
             ->assertSee('Settings')
             ->assertSee(route('trips.index').'?action=new', false)
+            ->assertSee(route('quick-trip-executions.index'), false)
             ->assertSee(route('expenses.vehicle.index').'?action=new', false)
             ->assertSee(route('invoices.index').'?action=new', false);
 
@@ -54,6 +55,51 @@ class MobileShellTest extends TestCase
         $response->assertSee('id="toast-container" class="position-fixed top-0 end-0 mt-5 p-3 z-3 pe-none"', false)
             ->assertSee('width: 44px; height: 44px;', false);
         $this->assertStringContainsString('toast align-items-center border-0 pe-auto', file_get_contents(public_path('js/common.js')));
+    }
+
+    public function test_quick_trip_execution_has_its_own_navigation_index(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('trips.quick-execution'))
+            ->assertRedirect(route('trips.index'));
+
+        $executionPage = $this->get(route('trips.index'))->assertOk()->getContent();
+        $this->assertDoesNotMatchRegularExpression(
+            '/<a href="'.preg_quote(route('trips.quick-execution'), '/').'"/',
+            $executionPage
+        );
+        $this->assertStringNotContainsString('data-action="trips.quick-execution"', $executionPage);
+        $this->assertStringNotContainsString('js/quick-trip-execution.js', $executionPage);
+        $this->assertStringContainsString(route('quick-trip-executions.index'), $executionPage);
+
+        $executionIndex = $this->get(route('quick-trip-executions.index'))
+            ->assertOk()
+            ->assertSee('quick-trip-executions-dt')
+            ->assertSee('New Quick Trip Execution')
+            ->getContent();
+        $this->assertMatchesRegularExpression(
+            '/<a href="'.preg_quote(route('quick-trip-executions.index'), '/').'"[^>]*aria-current="page"/',
+            $executionIndex
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<a href="'.preg_quote(route('trips.index'), '/').'"[^>]*aria-current="page"/',
+            $executionIndex
+        );
+
+        $configurationPage = $this->get(route('customers.quick-trips'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<a href="'.preg_quote(route('customers.quick-trips'), '/').'"[^>]*aria-current="page"/',
+            $configurationPage
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<a href="'.preg_quote(route('customers.index'), '/').'"[^>]*aria-current="page"/',
+            $configurationPage
+        );
     }
 
     public function test_mobile_table_actions_hide_labels_and_keep_touch_targets(): void

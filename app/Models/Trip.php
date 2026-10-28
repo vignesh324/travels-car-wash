@@ -15,7 +15,8 @@ class Trip extends Model
     use HasAuditFields, HasUuid, LogsActivity, SoftDeletes;
 
     protected $fillable = [
-        'trip_number', 'trip_date', 'vehicle_id', 'customer_id', 'trip_type',
+        'trip_number', 'trip_date', 'vehicle_id', 'customer_id', 'quick_trip_execution_id',
+        'quick_trip_direction', 'quick_trip_sequence', 'trip_type',
         'pickup_location', 'drop_location', 'route', 'description',
         'start_odometer', 'end_odometer', 'distance_km', 'driver_name',
         'fare_amount', 'additional_charges', 'discount',
@@ -61,6 +62,11 @@ class Trip extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function quickTripExecution()
+    {
+        return $this->belongsTo(QuickTripExecution::class);
     }
 
     /**

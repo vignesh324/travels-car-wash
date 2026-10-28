@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ExpenseCategoryController;
 use App\Http\Controllers\Api\CarWashController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\QuickTripController;
 use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\TripController;
 use App\Http\Controllers\Api\VehicleController;
@@ -46,9 +47,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('customers/{uuid}/restore', [CustomerController::class, 'restore']);
     Route::get('customers/{customer}/statement', [CustomerController::class, 'statement']);
 
+    Route::post('quick-trip-configurations', [QuickTripController::class, 'storeConfiguration']);
+    Route::put('quick-trip-configurations/{configuration}', [QuickTripController::class, 'updateConfiguration']);
+    Route::post('quick-trip-configurations/{configuration}/toggle-status', [QuickTripController::class, 'toggleConfiguration']);
+
     Route::get('trips', [TripController::class, 'index']);
     Route::post('trips', [TripController::class, 'store']);
     Route::get('trips/summary', [TripController::class, 'summary']);
+    Route::get('trips/quick-execution/configurations', [QuickTripController::class, 'activeConfigurations']);
+    Route::post('trips/quick-execution/generate', [QuickTripController::class, 'generate']);
     Route::get('trips/{trip}', [TripController::class, 'show']);
     Route::put('trips/{trip}', [TripController::class, 'update']);
     Route::delete('trips/{trip}', [TripController::class, 'destroy']);
@@ -70,6 +77,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'update']);
 
     Route::get('invoices', [InvoiceController::class, 'index']);
+    Route::get('invoices/eligible-trips', [InvoiceController::class, 'eligibleTrips']);
+    Route::get('invoices/eligible-quick-trips', [InvoiceController::class, 'eligibleQuickTrips']);
     Route::post('invoices', [InvoiceController::class, 'store']);
     Route::get('invoices/{invoice}', [InvoiceController::class, 'show']);
     Route::put('invoices/{invoice}', [InvoiceController::class, 'update']);
