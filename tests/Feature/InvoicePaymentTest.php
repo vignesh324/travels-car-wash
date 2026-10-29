@@ -511,6 +511,10 @@ class InvoicePaymentTest extends TestCase
         $this->actingAs($this->user)
             ->get("/api/invoices/{$inv->uuid}/pdf")
             ->assertOk()->assertHeader('Content-Type', 'application/pdf');
+
+        $response = $this->actingAs($this->user)->get(route('invoices.pdf', $inv->uuid));
+        $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
     }
 
     // ── Invoice Datatable ─────────────────────────────────────────────────────
@@ -784,6 +788,10 @@ class InvoicePaymentTest extends TestCase
         $this->actingAs($this->user)
             ->get("/api/payments/{$pmt['uuid']}/receipt")
             ->assertOk()->assertHeader('Content-Type', 'application/pdf');
+
+        $response = $this->actingAs($this->user)->get(route('payments.receipt', $pmt['uuid']));
+        $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
     }
 
     public function test_payments_datatable(): void

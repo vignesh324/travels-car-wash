@@ -6,9 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>@yield('title', 'Dashboard') — Travels & Car Wash</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="{{ asset('css/vendor/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('css/vendor/bootstrap-icons.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('css/vendor/dataTables.bootstrap5.min.css') }}" />
     <link rel="stylesheet" href="{{ asset('css/app-shell.css') }}" />
     @stack('head')
 </head>
@@ -33,11 +33,10 @@
 <x-ajax-modal />
 <x-record-view-modal />
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="{{ asset('js/vendor/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ asset('js/vendor/jquery-3.7.1.min.js') }}"></script>
+<script src="{{ asset('js/vendor/dataTables.min.js') }}"></script>
+<script src="{{ asset('js/vendor/dataTables.bootstrap5.min.js') }}"></script>
 <script>
 window.appConfig = {
     baseUrl: @json(url('')),
@@ -45,7 +44,7 @@ window.appConfig = {
 };
 </script>
 <script src="{{ asset('js/common.js') }}"></script>
-<script src="{{ asset('js/app.js') }}"></script>
+<script src="{{ asset('js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}"></script>
 @stack('scripts')
 </body>
 </html>

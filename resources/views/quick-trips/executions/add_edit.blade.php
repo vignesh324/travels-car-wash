@@ -1,4 +1,4 @@
-<div class="quick-trip-execution p-3 p-md-4"
+<form id="quick-trip-execution-form" class="quick-trip-execution p-3 p-md-4"
      data-configurations-url="{{ route('trips.quick-execution.configurations') }}"
      data-generate-url="{{ route('trips.quick-execution.generate') }}"
      data-initial-customer-id="{{ $initialCustomerId ?? '' }}"
@@ -61,9 +61,10 @@
         <div class="card-body border-top">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <p id="quick-exec-status" class="small text-muted mb-0" aria-live="polite">Select a customer and date to begin.</p>
-                <button type="button" class="btn btn-primary" id="quick-exec-generate" disabled>Save Quick Trip Execution</button>
+                <button type="submit" class="btn btn-primary" id="quick-exec-generate" disabled>Save Quick Trip Execution</button>
             </div>
             <p id="quick-exec-error" class="small text-danger mt-2 mb-0" role="alert"></p>
         </div>
     </section>
 </div>
+</form>

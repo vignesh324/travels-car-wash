@@ -99,6 +99,7 @@
 
 @push('scripts')
 <script>
+const paymentReceiptBaseUrl = @json(url('/payments'));
 let pmtTable = null, pmtReverseUuid = null;
 let pmtInvoiceOptions = [], pmtOutstandingInvoices = [];
 const pmtHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -274,7 +275,7 @@ async function viewPayment(uuid) {
         </div>` : ''}
         ${p.notes ? `<p class="text-muted small">Notes: ${pmtHtml(p.notes)}</p>` : ''}
         <div class="d-flex justify-content-end gap-3 pt-2 border-top">
-          <button type="button" data-action="payments.modal-receipt" data-payment-uuid="${pmtHtml(p.uuid)}" class="px-3 py-2 rounded-2 border border-secondary-subtle small fw-medium text-body btn btn-outline-secondary btn-sm">Download Receipt</button>
+          <a href="${paymentReceiptBaseUrl}/${encodeURIComponent(p.uuid)}/receipt" class="px-3 py-2 rounded-2 border border-secondary-subtle small fw-medium text-body btn btn-outline-secondary btn-sm">Download Receipt</a>
           <button onclick="closeModal('modal-pmt-view')" class="px-3 py-2 rounded-2 bg-primary text-white small fw-semibold btn btn-primary btn-sm">Close</button>
         </div>
       </div>`;
@@ -301,14 +302,8 @@ document.addEventListener('click', event => {
     case 'payments.view':
       viewPayment(button.dataset.paymentUuid);
       break;
-    case 'payments.receipt':
-      openPdfUrl(button.dataset.receiptUrl);
-      break;
     case 'payments.reverse':
       reversePayment(button.dataset.paymentUuid, button.dataset.paymentNumber, button.dataset.paymentAmount);
-      break;
-    case 'payments.modal-receipt':
-      openPdfUrl('/payments/' + encodeURIComponent(button.dataset.paymentUuid) + '/receipt');
       break;
   }
 });

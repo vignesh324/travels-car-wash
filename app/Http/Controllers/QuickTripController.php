@@ -9,6 +9,7 @@ use App\Models\QuickTripExecution;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class QuickTripController extends Controller
@@ -19,7 +20,7 @@ class QuickTripController extends Controller
     {
         $customers = Customer::dropdownOptions();
 
-        return view('quick-trips.executions', compact('customers'));
+        return view('quick-trips.executions.index', compact('customers'));
     }
 
     public function executionData(Request $request)
@@ -48,11 +49,7 @@ class QuickTripController extends Controller
                 ->addColumn('drop_location', fn (QuickTripExecution $execution) => $execution->configuration?->drop_location ?? '—')
                 ->addColumn('route', fn (QuickTripExecution $execution) => $execution->configuration?->route ?? '—')
                 ->addColumn('total_count', fn (QuickTripExecution $execution) => $execution->pickup_count + $execution->drop_count)
-                ->addColumn('total_amount', fn (QuickTripExecution $execution) => round(
-                    ($execution->pickup_count + $execution->drop_count)
-                        * (float) $execution->per_trip_charge,
-                    2
-                ))
+                ->addColumn('total_amount', fn (QuickTripExecution $execution) => $execution->amount())
                 ->addColumn('invoice_status', fn (QuickTripExecution $execution) => $execution->is_invoiced
                     ? '<span class="badge text-bg-success">Invoiced</span>'
                     : '<span class="badge text-bg-warning">Uninvoiced</span>')
@@ -75,18 +72,19 @@ class QuickTripController extends Controller
         $customers = Customer::dropdownOptions();
         $selectedCustomerId = request()->query('customer_id');
 
-        return view('quick-trips.configurations', compact('customers', 'selectedCustomerId'));
+        return view('quick-trips.configurations.index', compact('customers', 'selectedCustomerId'));
     }
 
     public function configurationAddEdit(?QuickTripConfiguration $configuration = null)
     {
+        $configuration?->load('slabs');
         $customers = Customer::dropdownOptions($configuration?->customer_id);
         $pageTitle = $configuration ? 'Edit Quick Trip Configuration' : 'Add Quick Trip Configuration';
         $formUrl = $configuration
             ? route('quick-trip-configurations.update', $configuration)
             : route('quick-trip-configurations.store');
         $selectedCustomerId = request()->query('customer_id', $configuration?->customer_id);
-        $html = view('quick-trips.configuration-form', compact(
+        $html = view('quick-trips.configurations.add_edit', compact(
             'configuration',
             'customers',
             'formUrl',
@@ -119,22 +117,37 @@ class QuickTripController extends Controller
     public function storeConfiguration(Request $request)
     {
         $data = $this->validateConfiguration($request);
+        $slabs = $data['quick_trip_slabs'] ?? [];
+        unset($data['quick_trip_slabs']);
 
-        return response()->json(QuickTripConfiguration::create($data), 201);
+        $configuration = DB::transaction(function () use ($data, $slabs) {
+            $configuration = QuickTripConfiguration::create($data);
+            $configuration->slabs()->createMany($slabs);
+
+            return $configuration->load('slabs');
+        });
+
+        return response()->json($configuration, 201);
     }
 
     public function updateConfiguration(Request $request, QuickTripConfiguration $configuration)
     {
         $data = $this->validateConfiguration($request);
+        $slabs = $data['quick_trip_slabs'] ?? [];
+        unset($data['quick_trip_slabs']);
         if ((int) $data['customer_id'] !== (int) $configuration->customer_id && $configuration->executions()->exists()) {
             throw ValidationException::withMessages([
                 'customer_id' => 'A Quick Trip configuration with execution history cannot be moved to another customer.',
             ]);
         }
 
-        $configuration->update($data);
+        DB::transaction(function () use ($configuration, $data, $slabs) {
+            $configuration->update($data);
+            $configuration->slabs()->delete();
+            $configuration->slabs()->createMany($slabs);
+        });
 
-        return response()->json($configuration->fresh());
+        return response()->json($configuration->fresh()->load('slabs'));
     }
 
     public function toggleConfiguration(QuickTripConfiguration $configuration)
@@ -146,7 +159,7 @@ class QuickTripController extends Controller
 
     public function showConfiguration(QuickTripConfiguration $configuration)
     {
-        return response()->json($configuration->load('customer:id,name,company_name,type'));
+        return response()->json($configuration->load('customer:id,name,company_name,type', 'slabs'));
     }
 
     public function execution()
@@ -159,7 +172,7 @@ class QuickTripController extends Controller
         $initialCustomerId = request()->query('customer_id');
         $initialTripDate = request()->query('trip_date', now()->toDateString());
         $initialConfigurationId = request()->query('configuration_id');
-        $html = view('quick-trips.execution-form', compact(
+        $html = view('quick-trips.executions.add_edit', compact(
             'customers',
             'initialCustomerId',
             'initialTripDate',
@@ -184,6 +197,7 @@ class QuickTripController extends Controller
             ->where('customer_id', $validated['customer_id'])
             ->where('is_active', true)
             ->orderBy('name')
+            ->with('slabs:id,quick_trip_configuration_id,max_trips,per_trip_charge')
             ->get(['id', 'name', 'pickup_location', 'drop_location', 'route', 'per_trip_charge']);
 
         $executions = QuickTripExecution::query()
@@ -198,7 +212,9 @@ class QuickTripController extends Controller
             return array_merge($configuration->toArray(), [
                 'pickup_count' => $execution?->pickup_count ?? 0,
                 'drop_count' => $execution?->drop_count ?? 0,
-                'per_trip_charge' => $execution?->per_trip_charge ?? $configuration->per_trip_charge,
+                'saved_per_trip_charge' => $execution?->per_trip_charge,
+                'saved_total_amount' => $execution?->total_amount,
+                'has_execution' => $execution !== null,
             ]);
         })->values());
     }
@@ -235,6 +251,7 @@ class QuickTripController extends Controller
                 ->where('is_active', true)
                 ->whereIn('id', $configurationIds)
                 ->lockForUpdate()
+                ->with('slabs')
                 ->get()
                 ->keyBy('id');
 
@@ -266,13 +283,17 @@ class QuickTripController extends Controller
                 }
 
                 if (! $execution) {
+                    $pricing = $configuration->pricingForCount(
+                        (int) $entry['pickup_count'] + (int) $entry['drop_count']
+                    );
                     $execution = QuickTripExecution::create([
                         'customer_id' => $customer->id,
                         'quick_trip_configuration_id' => $configuration->id,
                         'trip_date' => $validated['trip_date'],
                         'pickup_count' => (int) $entry['pickup_count'],
                         'drop_count' => (int) $entry['drop_count'],
-                        'per_trip_charge' => $configuration->per_trip_charge,
+                        'per_trip_charge' => $pricing['per_trip_charge'],
+                        'total_amount' => $pricing['total_amount'],
                     ]);
                     $created++;
                 } else {
@@ -280,12 +301,22 @@ class QuickTripController extends Controller
                         'pickup_count' => (int) $entry['pickup_count'],
                         'drop_count' => (int) $entry['drop_count'],
                     ];
+                    $countsChanged = $execution->pickup_count !== $changes['pickup_count']
+                        || $execution->drop_count !== $changes['drop_count'];
                     if ($execution->per_trip_charge === null) {
-                        $changes['per_trip_charge'] = $configuration->per_trip_charge;
+                        $countsChanged = true;
                     }
-                    if ($execution->pickup_count !== $changes['pickup_count']
-                        || $execution->drop_count !== $changes['drop_count']
-                        || $execution->per_trip_charge === null) {
+                    if ($execution->total_amount === null) {
+                        $countsChanged = true;
+                    }
+                    if ($countsChanged) {
+                        $pricing = $configuration->pricingForCount(
+                            $changes['pickup_count'] + $changes['drop_count']
+                        );
+                        $changes['per_trip_charge'] = $pricing['per_trip_charge'];
+                        $changes['total_amount'] = $pricing['total_amount'];
+                    }
+                    if ($countsChanged) {
                         $execution->update($changes);
                         $updated++;
                     }
@@ -313,15 +344,54 @@ class QuickTripController extends Controller
 
     private function validateConfiguration(Request $request): array
     {
-        return $request->validate([
+        $validator = Validator::make($request->all(), [
             'customer_id' => 'required|integer|exists:customers,id',
             'name' => 'required|string|max:255',
             'pickup_location' => 'required|string|max:255',
             'drop_location' => 'required|string|max:255',
             'route' => 'nullable|string|max:255',
             'per_trip_charge' => 'required|numeric|min:0',
+            'quick_trip_slabs' => 'nullable|array|max:50',
+            'quick_trip_slabs.*.max_trips' => 'nullable|integer|min:1',
+            'quick_trip_slabs.*.per_trip_charge' => 'required|numeric|min:0',
             'is_active' => 'required|boolean',
             'remarks' => 'nullable|string',
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $slabs = $request->input('quick_trip_slabs', []);
+            if (! is_array($slabs)) {
+                return;
+            }
+
+            $limits = [];
+            $unlimitedCount = 0;
+            foreach ($slabs as $index => $slab) {
+                if (! is_array($slab) || ! array_key_exists('max_trips', $slab)
+                    || $slab['max_trips'] === null || $slab['max_trips'] === '') {
+                    $unlimitedCount++;
+                    continue;
+                }
+
+                $limit = (string) $slab['max_trips'];
+                if (isset($limits[$limit])) {
+                    $validator->errors()->add(
+                        "quick_trip_slabs.{$index}.max_trips",
+                        'Trip-count maximums must be unique.'
+                    );
+                }
+                $limits[$limit] = true;
+            }
+
+            if ($unlimitedCount > 1) {
+                $validator->errors()->add(
+                    'quick_trip_slabs',
+                    'Only one tier can have no maximum trip count.'
+                );
+            }
+        });
+
+        return $validator->validate();
     }
+
 }

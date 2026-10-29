@@ -65,7 +65,7 @@
                         <th class="text-end">Pickup</th>
                         <th class="text-end">Drop</th>
                         <th class="text-end">Total Trips</th>
-                        <th class="text-end">Per Trip Charge</th>
+                        <th class="text-end">Rate on Last Trip</th>
                         <th class="text-end">Total Amount</th>
                         <th>Invoice</th>
                         <th class="text-end no-sort">Actions</th>
@@ -134,7 +134,11 @@ async function openQuickTripExecution(customerId = '', tripDate = '', configurat
 
 document.addEventListener('DOMContentLoaded', () => {
     initQuickTripExecutionsTable();
-    document.addEventListener('quick-trip-execution:saved', () => quickTripExecutionsTable?.ajax.reload(null, false));
+    document.addEventListener('quick-trip-execution:saved', event => {
+        closeModal('ajax-form-modal');
+        quickTripExecutionsTable?.ajax.reload(null, false);
+        toast.success(event.detail?.message || 'Quick Trip execution saved');
+    });
     document.getElementById('quick-trip-execution-add').addEventListener('click', () => openQuickTripExecution());
     document.getElementById('quick-trip-executions-dt').addEventListener('click', event => {
         const button = event.target.closest('[data-action="quick-trip-executions.edit"]');

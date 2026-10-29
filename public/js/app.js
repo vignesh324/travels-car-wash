@@ -339,21 +339,6 @@ window.closeModal = function(id) {
     if (element) bootstrap.Modal.getOrCreateInstance(element).hide();
 };
 
-window.openPdfUrl = async function(apiPath) {
-    try {
-        const response = await window.api.get(apiPath);
-        if (!response.ok) {
-            toast.error('Failed to generate PDF');
-            return;
-        }
-        const blobUrl = URL.createObjectURL(await response.blob());
-        const tab = window.open(blobUrl, '_blank');
-        if (tab) tab.addEventListener('load', () => URL.revokeObjectURL(blobUrl), { once: true });
-    } catch {
-        toast.error('Failed to generate PDF');
-    }
-};
-
 window.renderPagination = function(containerId, page, totalPages, total, onPage) {
     const container = document.getElementById(containerId);
     if (!container) return;

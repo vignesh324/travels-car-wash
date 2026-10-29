@@ -182,13 +182,13 @@
                 <div class="table-responsive invoice-table-wrap">
                     <table class="table table-sm align-middle invoice-table mb-0">
                         <thead>
-                            <tr><th>Service date</th><th>Quick Trip</th><th>Pickup location</th><th>Drop location</th><th class="text-end">Pickup count</th><th class="text-end">Drop count</th><th class="text-end">Rate</th><th class="text-end">Amount</th></tr>
+                            <tr><th>Service date</th><th>Quick Trip</th><th>Pickup location</th><th>Drop location</th><th class="text-end">Pickup count</th><th class="text-end">Drop count</th><th class="text-end">Rate on last trip</th><th class="text-end">Amount</th></tr>
                         </thead>
                         <tbody>
                             @foreach($quickTrips as $execution)
                                 @php
                                     $rate = (float) ($execution->per_trip_charge ?? $execution->configuration?->per_trip_charge ?? 0);
-                                    $amount = ($execution->pickup_count + $execution->drop_count) * $rate;
+                                    $amount = $execution->amount();
                                 @endphp
                                 <tr>
                                     <td>{{ $execution->trip_date?->format('M j, Y') ?? '—' }}</td>

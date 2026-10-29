@@ -93,14 +93,280 @@ class QuickTripTest extends TestCase
             ->assertJsonPath('pageTitle', 'Add Quick Trip Configuration')
             ->assertJsonPath('formUrl', route('quick-trip-configurations.store'))
             ->assertJsonPath('html', fn ($html) => str_contains($html, 'quick-trip-config-form')
+                && str_contains($html, 'onsubmit="window.saveQuickTripConfiguration(event)"')
+                && str_contains($html, 'type="submit"')
+                && str_contains($html, 'Trip-count price slabs')
                 && str_contains($html, 'School Run') === false);
 
         $this->assertSame(2, $this->customer->quickTripConfigurations()->count());
         $this->assertNotSame($this->configuration->id, $second->id);
     }
 
+    public function test_configuration_can_save_multiple_trip_count_price_slabs(): void
+    {
+        $this->actingAs($this->user)
+            ->postJson(route('quick-trip-configurations.store'), [
+                'customer_id' => $this->customer->id,
+                'name' => 'Tiered Run',
+                'pickup_location' => 'North Gate',
+                'drop_location' => 'School',
+                'route' => null,
+                'per_trip_charge' => 125,
+                'quick_trip_slabs' => [
+                    ['max_trips' => 5, 'per_trip_charge' => 110],
+                    ['max_trips' => 10, 'per_trip_charge' => 90],
+                    ['max_trips' => null, 'per_trip_charge' => 75],
+                ],
+                'is_active' => true,
+                'remarks' => null,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('slabs.0.max_trips', 5)
+            ->assertJsonPath('slabs.1.max_trips', 10)
+            ->assertJsonPath('slabs.2.max_trips', null);
+
+        $tieredConfiguration = QuickTripConfiguration::query()->where('name', 'Tiered Run')->firstOrFail();
+        $this->assertSame(3, $tieredConfiguration->slabs()->count());
+        $this->actingAs($this->user)
+            ->getJson(route('quick-trip-configurations.addEdit', $tieredConfiguration))
+            ->assertOk()
+            ->assertJsonPath('html', fn ($html) => str_contains($html, 'window.saveQuickTripConfiguration(event)')
+                && str_contains($html, 'data-slabs=')
+                && str_contains($html, 'max_trips')
+                && str_contains($html, 'per_trip_charge')
+                && str_contains($html, '90.00')
+                && str_contains($html, '110.00'));
+
+        $this->actingAs($this->user)
+            ->putJson(route('quick-trip-configurations.update', $tieredConfiguration), [
+                'customer_id' => $this->customer->id,
+                'name' => 'Tiered Run',
+                'pickup_location' => 'North Gate',
+                'drop_location' => 'School',
+                'per_trip_charge' => 125,
+                'quick_trip_slabs' => [
+                    ['max_trips' => 8, 'per_trip_charge' => 95],
+                ],
+                'is_active' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('slabs.0.max_trips', 8);
+        $this->assertSame(1, $tieredConfiguration->slabs()->count());
+
+        $this->actingAs($this->user)
+            ->postJson(route('quick-trip-configurations.store'), [
+                'customer_id' => $this->customer->id,
+                'name' => 'Invalid Tiers',
+                'pickup_location' => 'A',
+                'drop_location' => 'B',
+                'per_trip_charge' => 100,
+                'quick_trip_slabs' => [
+                    ['max_trips' => 5, 'per_trip_charge' => 90],
+                    ['max_trips' => 5, 'per_trip_charge' => 80],
+                ],
+                'is_active' => true,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('quick_trip_slabs.1.max_trips');
+    }
+
+    public function test_execution_prices_only_trips_above_each_configured_threshold(): void
+    {
+        $this->configuration->slabs()->createMany([
+            ['max_trips' => 5, 'per_trip_charge' => 110],
+            ['max_trips' => 10, 'per_trip_charge' => 90],
+            ['max_trips' => null, 'per_trip_charge' => 75],
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($this->configuration, 3, 2),
+            ]))
+            ->assertOk();
+
+        $execution = QuickTripExecution::firstOrFail();
+        $this->assertSame('125.00', $execution->per_trip_charge);
+        $this->assertSame('625.00', $execution->total_amount);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($this->configuration, 3, 3),
+            ]))
+            ->assertOk()
+            ->assertJsonPath('updated', 1);
+        $this->assertSame('110.00', $execution->fresh()->per_trip_charge);
+        $this->assertSame('735.00', $execution->fresh()->total_amount);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($this->configuration, 5, 5),
+            ]))
+            ->assertOk()
+            ->assertJsonPath('updated', 1);
+        $this->assertSame('110.00', $execution->fresh()->per_trip_charge);
+        $this->assertSame('1175.00', $execution->fresh()->total_amount);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($this->configuration, 6, 5),
+            ]))
+            ->assertOk()
+            ->assertJsonPath('updated', 1);
+        $this->assertSame('90.00', $execution->fresh()->per_trip_charge);
+        $this->assertSame('1265.00', $execution->fresh()->total_amount);
+
+        $this->configuration->slabs()->where('max_trips', 5)->update([
+            'per_trip_charge' => 50,
+        ]);
+        $this->configuration->slabs()->where('max_trips', 10)->update([
+            'per_trip_charge' => 70,
+        ]);
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($this->configuration, 6, 5),
+            ]))
+            ->assertOk()
+            ->assertJsonPath('updated', 0);
+        $this->assertSame('90.00', $execution->fresh()->per_trip_charge);
+        $this->assertSame('1265.00', $execution->fresh()->total_amount);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($this->configuration, 6, 6),
+            ]))
+            ->assertOk()
+            ->assertJsonPath('updated', 1);
+        $this->assertSame('70.00', $execution->fresh()->per_trip_charge);
+        $this->assertSame('1015.00', $execution->fresh()->total_amount);
+    }
+
+    public function test_progressive_slab_total_is_snapshotted_and_billed_without_repricing(): void
+    {
+        $configuration = $this->makeConfiguration(['per_trip_charge' => 300]);
+        $configuration->slabs()->create([
+            'max_trips' => 10,
+            'per_trip_charge' => 250,
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($configuration, 6, 5),
+            ]))
+            ->assertOk();
+
+        $execution = QuickTripExecution::firstOrFail();
+        $this->assertSame('250.00', $execution->per_trip_charge);
+        $this->assertSame('3250.00', $execution->total_amount);
+
+        $configuration->update(['per_trip_charge' => 100]);
+        $configuration->slabs()->update(['per_trip_charge' => 50]);
+
+        $this->actingAs($this->user)
+            ->getJson(route('invoices.eligible-quick-trips', [
+                'customer_id' => $this->customer->id,
+                'date_from' => '2026-10-01',
+                'date_to' => '2026-10-31',
+            ]))
+            ->assertOk()
+            ->assertJsonFragment(['total_amount' => 3250]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('invoices.store'), [
+                'customer_id' => $this->customer->id,
+                'invoice_date' => '2026-10-27',
+                'source' => 'travels',
+                'quick_trip_ids' => [$execution->id],
+                'trip_date_from' => '2026-10-01',
+                'trip_date_to' => '2026-10-31',
+                'items' => [],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('total_amount', '3250.00');
+
+        $invoice = \App\Models\Invoice::where('invoice_number', '!=', 'QT-LOCK-001')->firstOrFail();
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $invoice->id,
+            'description' => 'Quick Trip - School Run (11 trips)',
+            'quantity' => 1,
+            'unit_price' => 3250,
+            'total_amount' => 3250,
+        ]);
+    }
+
+    public function test_base_rate_is_used_when_no_slab_covers_the_execution_count(): void
+    {
+        $configuration = $this->makeConfiguration([
+            'name' => 'Finite Slab Run',
+            'per_trip_charge' => 65,
+        ]);
+        $configuration->slabs()->create([
+            'max_trips' => 3,
+            'per_trip_charge' => 55,
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($configuration, 1, 2),
+            ]))
+            ->assertOk();
+
+        $this->assertDatabaseHas('quick_trip_executions', [
+            'quick_trip_configuration_id' => $configuration->id,
+            'per_trip_charge' => 65,
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($configuration, 2, 2),
+            ]))
+            ->assertOk()
+            ->assertJsonPath('updated', 1);
+
+        $this->assertDatabaseHas('quick_trip_executions', [
+            'quick_trip_configuration_id' => $configuration->id,
+            'per_trip_charge' => 55,
+        ]);
+    }
+
+    public function test_blank_maximum_slab_never_overrides_base_or_finite_threshold_rate(): void
+    {
+        $configuration = $this->makeConfiguration([
+            'name' => 'Blank Threshold Run',
+            'per_trip_charge' => 65,
+        ]);
+        $configuration->slabs()->createMany([
+            ['max_trips' => null, 'per_trip_charge' => 5],
+            ['max_trips' => 10, 'per_trip_charge' => 50],
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($configuration, 5, 5),
+            ]))
+            ->assertOk();
+        $this->assertDatabaseHas('quick_trip_executions', [
+            'quick_trip_configuration_id' => $configuration->id,
+            'per_trip_charge' => 65,
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($configuration, 6, 5),
+            ]))
+            ->assertOk();
+        $this->assertDatabaseHas('quick_trip_executions', [
+            'quick_trip_configuration_id' => $configuration->id,
+            'per_trip_charge' => 50,
+        ]);
+    }
+
     public function test_execution_page_and_customer_date_configuration_loader_render(): void
     {
+        $this->configuration->slabs()->create([
+            'max_trips' => 5,
+            'per_trip_charge' => 100,
+        ]);
+
         $this->actingAs($this->user)
             ->get(route('trips.quick-execution'))
             ->assertRedirect(route('trips.index'));
@@ -114,6 +380,9 @@ class QuickTripTest extends TestCase
                 && str_contains($html, 'quick-exec-customer')
                 && str_contains($html, 'quick-exec-inputs')
                 && str_contains($html, 'Pickup Count')
+                && str_contains($html, '<form id="quick-trip-execution-form"')
+                && str_contains($html, 'type="submit"')
+                && str_ends_with(trim($html), '</form>')
                 && ! str_contains($html, '<table')
                 && ! str_contains($html, 'quick-exec-add-row'));
 
@@ -124,6 +393,7 @@ class QuickTripTest extends TestCase
             ]))
             ->assertOk()
             ->assertJsonPath('0.name', 'School Run')
+            ->assertJsonPath('0.slabs.0.max_trips', 5)
             ->assertJsonPath('0.pickup_count', 0)
             ->assertJsonPath('0.drop_count', 0);
     }
@@ -366,9 +636,9 @@ class QuickTripTest extends TestCase
         ]);
         $this->assertDatabaseHas('invoice_items', [
             'invoice_id' => $invoice->id,
-            'description' => 'Quick Trip - School Run',
-            'quantity' => 3,
-            'unit_price' => 125,
+            'description' => 'Quick Trip - School Run (3 trips)',
+            'quantity' => 1,
+            'unit_price' => 375,
             'total_amount' => 375,
         ]);
         $this->assertSame(0, Trip::count());

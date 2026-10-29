@@ -138,7 +138,7 @@
                     <th style="width:19%">Drop location</th>
                     <th class="right" style="width:7%">Pickup</th>
                     <th class="right" style="width:7%">Drop</th>
-                    <th class="right" style="width:8%">Rate (₹)</th>
+                    <th class="right" style="width:8%">Last-tier rate (₹)</th>
                     <th class="right" style="width:8%">Amount (₹)</th>
                 </tr>
             </thead>
@@ -146,7 +146,7 @@
                 @foreach($quickTrips as $execution)
                     @php
                         $rate = (float) ($execution->per_trip_charge ?? $execution->configuration?->per_trip_charge ?? 0);
-                        $amount = ($execution->pickup_count + $execution->drop_count) * $rate;
+                        $amount = $execution->amount();
                     @endphp
                     <tr>
                         <td>{{ $execution->trip_date?->format('d-m-Y') ?? '—' }}</td>

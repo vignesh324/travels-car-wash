@@ -209,6 +209,7 @@
 @endif
 
 @push('scripts')
+<script src="{{ asset('js/vendor/chart.umd.min.js') }}"></script>
 <script>
 const chartDefaults = {
     font: { family: 'system-ui, sans-serif', size: 11 },

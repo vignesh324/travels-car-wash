@@ -588,7 +588,7 @@
                 quickSummary.innerHTML = selectedQuickTrips.length ? `
     <p class="small fw-semibold mb-2">${selectedQuickTrips.length} Quick Trip execution(s) selected</p>
     <div class="table-responsive"><table class="table table-sm table-bordered mb-1">
-      <thead><tr><th>Date</th><th>Quick Trip</th><th>Pickup / Drop</th><th class="text-end">Count</th><th class="text-end">Rate</th><th class="text-end">Amount</th></tr></thead>
+      <thead><tr><th>Date</th><th>Quick Trip</th><th>Pickup / Drop</th><th class="text-end">Count</th><th class="text-end">Last-trip rate</th><th class="text-end">Amount</th></tr></thead>
       <tbody>${selectedQuickTrips.map(execution => `<tr>
         <td>${invHtml(fmt.date(execution.trip_date))}</td>
         <td>${invHtml(execution.configuration?.name || 'Quick Trip')}</td>
@@ -680,7 +680,7 @@
           <span>${invHtml(fmt.date(execution.trip_date))}</span>
           <span class="fw-medium">${invHtml(execution.configuration?.name || 'Quick Trip')}</span>
           <span>${Number(execution.pickup_count)} pickup / ${Number(execution.drop_count)} drop</span>
-          <span class="ms-auto">${Number(execution.total_count)} trips × ${fmt.currency(execution.per_trip_charge)}</span>
+          <span class="ms-auto">${Number(execution.total_count)} trips · last-trip rate ${fmt.currency(execution.per_trip_charge)}</span>
           <span class="fw-semibold">${fmt.currency(execution.total_amount)}</span>
         </label>`).join('')}
       </div>` : '';
@@ -819,9 +819,6 @@
                 switch (button.dataset.action) {
                     case 'invoices.add':
                         openInvModal();
-                        break;
-                    case 'invoices.pdf':
-                        openPdfUrl(button.dataset.pdfUrl);
                         break;
                     case 'invoices.edit':
                         openInvModal(button.dataset.invoiceUuid);

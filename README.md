@@ -280,8 +280,8 @@ gunzip < /var/backups/travels-car-wash/db_YYYYMMDD_HHMMSS.sql.gz | mysql -u your
 ## 8. Mobile Quick Actions
 
 - Instant 1-tap entry shortcuts for: `Add Trip`, `Add Expense`, `Create Invoice`, `Record Payment`, and `Create Car Wash Bill`.
-- Manage customer configurations from **Customers → Quick Trip Configurations**. Configure each route once, then use **Trips → Quick Trip Execution** to review saved date-specific pickup/drop counts, create an execution, or reconcile counts; this does not create individual records in the Trips table.
-- Quick Trip execution records appear in the invoice workflow through customer and billing-period selection. Invoices use the per-trip rate saved with the execution and retain a link to the source record, so later configuration rate changes do not alter historical billing. Executions already linked to an invoice cannot have their counts changed.
+- Manage customer configurations from **Customers → Quick Trip Configurations**. Configure each route once and optionally add multiple maximum-trip price slabs. Trips up to the first maximum use the base rate; each slab rate applies only to trips above its maximum, up to the next configured maximum. Trips above the highest exceeded maximum use that slab's rate. A blank maximum is not a threshold and does not override the base rate. Use **Trips → Quick Trip Execution** to review saved date-specific counts, create an execution, or reconcile counts; this does not create individual records in the Trips table. Each execution snapshots its calculated total and final-tier rate for historical invoicing.
+- Quick Trip execution records appear in the invoice workflow through customer and billing-period selection. Invoices use the saved execution total rather than recalculating it from the current configuration, and retain a link to the source record. Later configuration or slab rate changes do not alter historical billing. Executions already linked to an invoice cannot have their counts changed.
 
 ## 9. Security Checklist
 

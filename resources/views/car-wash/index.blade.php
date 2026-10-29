@@ -364,13 +364,6 @@ async function deleteWashTransaction(id) {
     if (!res.ok) return toast.error('Unable to delete transaction');
     toast.success('Transaction deleted'); loadWashTransactions();
 }
-async function downloadWashBill(id) {
-    const res = await api.get(`/car-wash/${id}/pdf-url`);
-    if (!res.ok) return toast.error('Unable to create receipt link');
-    const data = await res.json();
-    if (data.url) window.open(data.url, '_blank', 'noopener');
-    else toast.error('Receipt link unavailable');
-}
 initWashTransactionsTable();
 if (new URLSearchParams(window.location.search).get('action') === 'new') openWashForm();
 
@@ -403,9 +396,6 @@ document.addEventListener('click', event => {
             break;
         case 'car-wash.edit':
             editWashTransaction(Number(button.dataset.transactionId));
-            break;
-        case 'car-wash.download':
-            downloadWashBill(Number(button.dataset.transactionId));
             break;
         case 'car-wash.delete':
             deleteWashTransaction(Number(button.dataset.transactionId));

@@ -156,6 +156,15 @@ class CarWashTest extends TestCase
             ->assertOk()->assertJsonFragment(['id' => $tx['id']]);
     }
 
+    public function test_web_transaction_pdf_is_returned_as_attachment(): void
+    {
+        $tx = $this->actingAs($this->user)->postJson('/api/car-wash/transactions', $this->txPayload())->json();
+
+        $response = $this->actingAs($this->user)->get(route('car-wash.pdf', $tx['id']));
+        $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
+    }
+
     public function test_update_transaction(): void
     {
         $tx = $this->actingAs($this->user)->postJson('/api/car-wash/transactions', $this->txPayload())->json();

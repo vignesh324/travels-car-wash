@@ -12,7 +12,7 @@ class QuickTripExecution extends Model
 
     protected $fillable = [
         'customer_id', 'quick_trip_configuration_id', 'trip_date', 'pickup_count', 'drop_count',
-        'per_trip_charge',
+        'per_trip_charge', 'total_amount',
     ];
 
     protected $casts = [
@@ -20,6 +20,7 @@ class QuickTripExecution extends Model
         'pickup_count' => 'integer',
         'drop_count' => 'integer',
         'per_trip_charge' => 'decimal:2',
+        'total_amount' => 'decimal:2',
     ];
 
     public function customer()
@@ -46,5 +47,16 @@ class QuickTripExecution extends Model
     public function invoiceLinks()
     {
         return $this->hasMany(InvoiceQuickTripLink::class);
+    }
+
+    public function amount(): float
+    {
+        if ($this->total_amount !== null) {
+            return (float) $this->total_amount;
+        }
+
+        $rate = (float) ($this->per_trip_charge ?? $this->configuration?->per_trip_charge ?? 0);
+
+        return round(($this->pickup_count + $this->drop_count) * $rate, 2);
     }
 }

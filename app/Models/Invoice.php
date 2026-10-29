@@ -202,13 +202,13 @@ class Invoice extends Model
                 $count = $execution->pickup_count + $execution->drop_count;
 
                 return [
-                    'description' => 'Quick Trip - '.($configuration?->name ?? 'Configured trip'),
+                    'description' => 'Quick Trip - '.($configuration?->name ?? 'Configured trip').' ('.$count.' trips)',
                     'source' => 'travels',
                     'vehicle_type' => null,
                     'route' => $configuration?->route,
                     'service_days' => null,
-                    'quantity' => $count,
-                    'unit_price' => (float) ($execution->per_trip_charge ?? $configuration?->per_trip_charge ?? 0),
+                    'quantity' => 1,
+                    'unit_price' => $execution->amount(),
                     'discount' => 0,
                     'tax_rate' => 0,
                 ];

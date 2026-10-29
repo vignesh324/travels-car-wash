@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title')</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ asset('css/vendor/bootstrap.min.css') }}">
 </head>
 <body class="bg-body-tertiary">
     <main class="container d-flex align-items-center justify-content-center min-vh-100 py-5 text-center">

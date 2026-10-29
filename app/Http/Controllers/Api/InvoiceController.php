@@ -59,11 +59,7 @@ class InvoiceController extends Controller
                 ->get()
                 ->map(fn (QuickTripExecution $execution) => array_merge($execution->toArray(), [
                     'total_count' => $execution->pickup_count + $execution->drop_count,
-                    'total_amount' => round(
-                        ($execution->pickup_count + $execution->drop_count)
-                            * (float) ($execution->per_trip_charge ?? $execution->configuration?->per_trip_charge ?? 0),
-                        2
-                    ),
+                    'total_amount' => $execution->amount(),
                 ]))
         );
     }

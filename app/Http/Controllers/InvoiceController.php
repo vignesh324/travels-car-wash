@@ -75,11 +75,7 @@ class InvoiceController extends Controller
                 ->get()
                 ->map(fn (QuickTripExecution $execution) => array_merge($execution->toArray(), [
                     'total_count' => $execution->pickup_count + $execution->drop_count,
-                    'total_amount' => round(
-                        ($execution->pickup_count + $execution->drop_count)
-                            * (float) ($execution->per_trip_charge ?? $execution->configuration?->per_trip_charge ?? 0),
-                        2
-                    ),
+                    'total_amount' => $execution->amount(),
                 ]))
         );
     }
@@ -101,7 +97,7 @@ class InvoiceController extends Controller
                 ->addColumn('actions', fn (Invoice $invoice) =>
                     '<div class="d-inline-flex justify-content-end gap-1 text-nowrap resource-row-actions">'
                     . '<a href="' . e(route('invoices.show', ['invoice' => $invoice->uuid])) . '" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" aria-label="' . e('View invoice ' . $invoice->invoice_number) . '" title="View"><i class="bi bi-eye" aria-hidden="true"></i><span>View</span></a>'
-                    . '<button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" data-action="invoices.pdf" aria-label="' . e('Download PDF for invoice ' . $invoice->invoice_number) . '" title="PDF" data-pdf-url="' . e(route('invoices.pdf', ['invoice' => $invoice->uuid])) . '"><i class="bi bi-filetype-pdf" aria-hidden="true"></i><span>PDF</span></button>'
+                    . '<a href="' . e(route('invoices.pdf', ['invoice' => $invoice->uuid])) . '" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" aria-label="' . e('Download PDF for invoice ' . $invoice->invoice_number) . '" title="PDF"><i class="bi bi-filetype-pdf" aria-hidden="true"></i><span>PDF</span></a>'
                     . (in_array($invoice->status, ['paid', 'cancelled'], true)
                         ? ''
                         : '<button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" data-action="invoices.edit" aria-label="' . e('Edit invoice ' . $invoice->invoice_number) . '" title="Edit" data-invoice-uuid="' . e($invoice->uuid) . '"><i class="bi bi-pencil" aria-hidden="true"></i><span>Edit</span></button>'

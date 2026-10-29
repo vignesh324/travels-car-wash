@@ -57,7 +57,7 @@ class CarWashController extends Controller
                     '<div class="d-inline-flex justify-content-end gap-1 text-nowrap resource-row-actions">'
                     . '<button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" data-action="car-wash.view" aria-label="' . e('View car wash transaction ' . $transaction->transaction_number) . '" title="View" data-transaction-id="' . e($transaction->id) . '"><i class="bi bi-eye" aria-hidden="true"></i><span>View</span></button>'
                     . '<button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" data-action="car-wash.edit" aria-label="' . e('Edit car wash transaction ' . $transaction->transaction_number) . '" title="Edit" data-transaction-id="' . e($transaction->id) . '"><i class="bi bi-pencil" aria-hidden="true"></i><span>Edit</span></button>'
-                    . '<button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" data-action="car-wash.download" aria-label="' . e('Download or print bill ' . $transaction->transaction_number) . '" title="Print" data-transaction-id="' . e($transaction->id) . '"><i class="bi bi-download" aria-hidden="true"></i><span>Print</span></button>'
+                    . '<a href="' . e(route('car-wash.pdf', ['carWash' => $transaction->id])) . '" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" aria-label="' . e('Download bill ' . $transaction->transaction_number) . '" title="Download"><i class="bi bi-download" aria-hidden="true"></i><span>Download</span></a>'
                     . '<button type="button" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center gap-1 text-nowrap" data-action="car-wash.delete" aria-label="' . e('Delete car wash transaction ' . $transaction->transaction_number) . '" title="Delete" data-transaction-id="' . e($transaction->id) . '"><i class="bi bi-trash" aria-hidden="true"></i><span>Delete</span></button>'
                     . '</div>'
                 )
@@ -254,7 +254,10 @@ class CarWashController extends Controller
         $profile  = BusinessProfile::first();
         $filename = 'Bill-' . str_replace('/', '-', $carWash->transaction_number) . '.pdf';
 
-        return Pdf::loadView('pdf.carwash', compact('carWash', 'profile'))->download($filename);
+        return Pdf::loadView('pdf.carwash', [
+            'carWashTransaction' => $carWash,
+            'profile' => $profile,
+        ])->download($filename);
     }
 
     public function pdfSignedUrl(CarWashTransaction $carWash)

@@ -52,6 +52,7 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/vendor/chart.umd.min.js') }}"></script>
 <script>
 let activeReport = 'revenue', reportChart = null, reportPage = 1;
 const reportLabels = {
