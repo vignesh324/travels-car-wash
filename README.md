@@ -66,6 +66,10 @@ A complete, production-ready, mobile-first web application designed for small bu
 
 ## 4. Local Development Setup
 
+### Database Backup
+
+Sign in to the application and open **Settings → Database backup**, or download the SQL export directly from `/database/export`. The route requires an authenticated session. Keep downloaded backups private; they contain application data.
+
 ### Prerequisites
 - PHP >= 8.2 (with `pdo_mysql`, `gd`, `bcmath`, `mbstring`, `xml`, `curl`)
 - Composer >= 2.x

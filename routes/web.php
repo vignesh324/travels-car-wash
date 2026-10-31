@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\CarWashController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DatabaseExportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\InvoiceController;
@@ -49,6 +50,7 @@ Route::get('/pdf/carwash/{carWashTransaction}', [CarWashController::class,  'pdf
 // ── Authenticated routes ──────────────────────────────────────────────────────
 Route::middleware('auth')->group(function () {
     Route::get('/', fn() => redirect()->route('dashboard.index'));
+    Route::get('database/export', DatabaseExportController::class)->name('database.export');
 
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
