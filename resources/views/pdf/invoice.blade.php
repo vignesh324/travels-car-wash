@@ -132,12 +132,14 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width:12%">Service date</th>
-                    <th style="width:20%">Quick Trip</th>
-                    <th style="width:19%">Pickup location</th>
-                    <th style="width:19%">Drop location</th>
-                    <th class="right" style="width:7%">Pickup</th>
-                    <th class="right" style="width:7%">Drop</th>
+                    <th style="width:10%">Service date</th>
+                    <th style="width:12%">Vehicle</th>
+                    <th style="width:12%">Driver</th>
+                    <th style="width:18%">Quick Trip</th>
+                    <th style="width:15%">Pickup location</th>
+                    <th style="width:15%">Drop location</th>
+                    <th class="right" style="width:6%">Pickup</th>
+                    <th class="right" style="width:6%">Drop</th>
                     <th class="right" style="width:8%">Last-tier rate (₹)</th>
                     <th class="right" style="width:8%">Amount (₹)</th>
                 </tr>
@@ -147,9 +149,13 @@
                     @php
                         $rate = (float) ($execution->per_trip_charge ?? $execution->configuration?->per_trip_charge ?? 0);
                         $amount = $execution->amount();
+                        $vehicleName = $execution->vehicle?->registration_number ?: $execution->vehicle?->name ?: $execution->vehicle_name ?: 'Vehicle not recorded';
+                        $driverName = $execution->driver_name ?: '—';
                     @endphp
                     <tr>
                         <td>{{ $execution->trip_date?->format('d-m-Y') ?? '—' }}</td>
+                        <td>{{ $vehicleName }}</td>
+                        <td>{{ $driverName }}</td>
                         <td>{{ $execution->configuration?->name ?? 'Quick Trip' }}</td>
                         <td>{{ $execution->configuration?->pickup_location ?? '—' }}</td>
                         <td>{{ $execution->configuration?->drop_location ?? '—' }}</td>

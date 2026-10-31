@@ -6,6 +6,7 @@ use App\Http\Traits\AjaxDataTableTrait;
 use App\Models\Customer;
 use App\Models\QuickTripConfiguration;
 use App\Models\QuickTripExecution;
+use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,7 @@ class QuickTripController extends Controller
                         return '<span class="text-muted small">Configuration inactive</span>';
                     }
 
-                    return '<button type="button" class="btn btn-outline-primary btn-sm" data-action="quick-trip-executions.edit" data-customer-id="'.e($execution->customer_id).'" data-trip-date="'.e($execution->trip_date->toDateString()).'" data-configuration-id="'.e($execution->quick_trip_configuration_id).'"><i class="bi bi-pencil" aria-hidden="true"></i><span class="ms-1">Edit counts</span></button>';
+                    return '<button type="button" class="btn btn-outline-primary btn-sm" data-action="quick-trip-executions.edit" data-execution-id="'.e($execution->id).'" data-customer-id="'.e($execution->customer_id).'" data-trip-date="'.e($execution->trip_date->toDateString()).'" data-configuration-id="'.e($execution->quick_trip_configuration_id).'"><i class="bi bi-pencil" aria-hidden="true"></i><span class="ms-1">Edit counts</span></button>';
                 })
                 ->rawColumns(['invoice_status', 'actions']);
         });
@@ -169,12 +170,18 @@ class QuickTripController extends Controller
         }
 
         $customers = Customer::dropdownOptions();
+        $vehicles = Vehicle::dropdownOptions();
         $initialCustomerId = request()->query('customer_id');
+        $initialExecutionId = request()->query('execution_id');
+        $initialVehicleId = request()->query('vehicle_id');
         $initialTripDate = request()->query('trip_date', now()->toDateString());
         $initialConfigurationId = request()->query('configuration_id');
         $html = view('quick-trips.executions.add_edit', compact(
             'customers',
+            'vehicles',
             'initialCustomerId',
+            'initialExecutionId',
+            'initialVehicleId',
             'initialTripDate',
             'initialConfigurationId'
         ))->render();
@@ -212,6 +219,8 @@ class QuickTripController extends Controller
             return array_merge($configuration->toArray(), [
                 'pickup_count' => $execution?->pickup_count ?? 0,
                 'drop_count' => $execution?->drop_count ?? 0,
+                'vehicle_id' => $execution?->vehicle_id ?? null,
+                'driver_name' => $execution?->driver_name ?? null,
                 'saved_per_trip_charge' => $execution?->per_trip_charge,
                 'saved_total_amount' => $execution?->total_amount,
                 'has_execution' => $execution !== null,
@@ -223,6 +232,9 @@ class QuickTripController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'required|integer|exists:customers,id',
+            'execution_id' => 'nullable|integer|exists:quick_trip_executions,id',
+            'vehicle_id' => 'nullable|integer|exists:vehicles,id',
+            'driver_name' => 'nullable|string|max:100',
             'trip_date' => 'required|date',
             'entries' => 'required|array|min:1',
             'entries.*.configuration_id' => 'required|integer|distinct|exists:quick_trip_configurations,id',
@@ -263,24 +275,33 @@ class QuickTripController extends Controller
 
             $created = 0;
             $updated = 0;
+            $editedExecution = null;
+            if (! empty($validated['execution_id'])) {
+                $editedExecution = QuickTripExecution::query()
+                    ->whereKey($validated['execution_id'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $editedExecution) {
+                    throw ValidationException::withMessages([
+                        'execution_id' => 'The Quick Trip execution being edited could not be found.',
+                    ]);
+                }
+
+                if (count($validated['entries']) !== 1) {
+                    throw ValidationException::withMessages([
+                        'entries' => 'An edit must contain exactly one Quick Trip execution.',
+                    ]);
+                }
+            }
+
             foreach ($validated['entries'] as $entry) {
                 $configuration = $configurations->get($entry['configuration_id']);
-                $execution = QuickTripExecution::query()
+                $execution = $editedExecution ?? QuickTripExecution::query()
                     ->where('quick_trip_configuration_id', $configuration->id)
                     ->whereDate('trip_date', $validated['trip_date'])
                     ->lockForUpdate()
                     ->first();
-
-                if ($execution && $execution->invoices()->exists()) {
-                    if ((int) $execution->pickup_count !== (int) $entry['pickup_count']
-                        || (int) $execution->drop_count !== (int) $entry['drop_count']) {
-                        throw ValidationException::withMessages([
-                            'entries' => "Cannot change {$configuration->name}; it has previously been linked to an invoice.",
-                        ]);
-                    }
-
-                    continue;
-                }
 
                 if (! $execution) {
                     $pricing = $configuration->pricingForCount(
@@ -288,35 +309,75 @@ class QuickTripController extends Controller
                     );
                     $execution = QuickTripExecution::create([
                         'customer_id' => $customer->id,
+                        'vehicle_id' => $validated['vehicle_id'] ?? null,
                         'quick_trip_configuration_id' => $configuration->id,
                         'trip_date' => $validated['trip_date'],
                         'pickup_count' => (int) $entry['pickup_count'],
                         'drop_count' => (int) $entry['drop_count'],
+                        'driver_name' => $validated['driver_name'] ?? null,
                         'per_trip_charge' => $pricing['per_trip_charge'],
                         'total_amount' => $pricing['total_amount'],
                     ]);
                     $created++;
                 } else {
+                    $vehicleId = $validated['vehicle_id'] ?? null;
+                    $driverName = $validated['driver_name'] ?? null;
                     $changes = [
+                        'customer_id' => $customer->id,
+                        'quick_trip_configuration_id' => $configuration->id,
+                        'trip_date' => $validated['trip_date'],
                         'pickup_count' => (int) $entry['pickup_count'],
                         'drop_count' => (int) $entry['drop_count'],
+                        'vehicle_id' => $vehicleId,
+                        'driver_name' => $driverName,
                     ];
+                    $configurationChanged = (int) $execution->quick_trip_configuration_id !== (int) $configuration->id;
+                    $dateChanged = $execution->trip_date->toDateString() !== $validated['trip_date'];
+                    $customerChanged = (int) $execution->customer_id !== (int) $customer->id;
                     $countsChanged = $execution->pickup_count !== $changes['pickup_count']
                         || $execution->drop_count !== $changes['drop_count'];
+                    $vehicleChanged = ($execution->vehicle_id ?? null) !== $vehicleId;
+                    $driverChanged = ($execution->driver_name ?? null) !== $driverName;
+                    $identityChanged = $configurationChanged || $dateChanged || $customerChanged;
+
+                    if ($editedExecution && $identityChanged) {
+                        $conflictingExecution = QuickTripExecution::query()
+                            ->where('quick_trip_configuration_id', $configuration->id)
+                            ->whereDate('trip_date', $validated['trip_date'])
+                            ->where('id', '!=', $execution->id)
+                            ->lockForUpdate()
+                            ->exists();
+                        if ($conflictingExecution) {
+                            throw ValidationException::withMessages([
+                                'entries' => 'An execution already exists for this Quick Trip configuration and date.',
+                            ]);
+                        }
+                    }
+
+                    $executionLinkedToInvoice = $execution->invoices()->exists();
+                    if ($executionLinkedToInvoice) {
+                        if ($countsChanged || $vehicleChanged || $driverChanged || $identityChanged) {
+                            throw ValidationException::withMessages([
+                                'entries' => "Cannot change {$configuration->name}; it has previously been linked to an invoice.",
+                            ]);
+                        }
+                        continue;
+                    }
+
                     if ($execution->per_trip_charge === null) {
                         $countsChanged = true;
                     }
                     if ($execution->total_amount === null) {
                         $countsChanged = true;
                     }
-                    if ($countsChanged) {
+                    if ($countsChanged || $configurationChanged) {
                         $pricing = $configuration->pricingForCount(
                             $changes['pickup_count'] + $changes['drop_count']
                         );
                         $changes['per_trip_charge'] = $pricing['per_trip_charge'];
                         $changes['total_amount'] = $pricing['total_amount'];
                     }
-                    if ($countsChanged) {
+                    if ($countsChanged || $vehicleChanged || $driverChanged || $identityChanged) {
                         $execution->update($changes);
                         $updated++;
                     }

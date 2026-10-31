@@ -118,12 +118,13 @@ function initQuickTripExecutionsTable() {
     });
 }
 
-async function openQuickTripExecution(customerId = '', tripDate = '', configurationId = '') {
+async function openQuickTripExecution(customerId = '', tripDate = '', configurationId = '', executionId = '') {
     const url = new URL(@json(route('trips.quick-execution')), window.location.origin);
     url.searchParams.set('modal', '1');
     if (customerId) url.searchParams.set('customer_id', customerId);
     if (tripDate) url.searchParams.set('trip_date', tripDate);
     if (configurationId) url.searchParams.set('configuration_id', configurationId);
+    if (executionId) url.searchParams.set('execution_id', executionId);
     try {
         await window.loadAddEditModal(url.toString());
         window.initQuickTripExecution?.(document.querySelector('#ajax-form-modal-body .quick-trip-execution'));
@@ -143,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('quick-trip-executions-dt').addEventListener('click', event => {
         const button = event.target.closest('[data-action="quick-trip-executions.edit"]');
         if (!button) return;
-        openQuickTripExecution(button.dataset.customerId, button.dataset.tripDate, button.dataset.configurationId);
+        openQuickTripExecution(button.dataset.customerId, button.dataset.tripDate, button.dataset.configurationId, button.dataset.executionId);
     });
 });
 </script>

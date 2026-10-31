@@ -25,7 +25,9 @@ class VehicleController extends Controller
         }
 
         return response()->json(
-            Vehicle::where('is_active', true)->orderBy('name')->get(['id', 'uuid', 'name', 'registration_number', 'type'])
+            Vehicle::where('is_active', true)->orderBy('name')->get([
+                'id', 'uuid', 'name', 'registration_number', 'type', 'default_driver_name',
+            ])
         );
     }
 

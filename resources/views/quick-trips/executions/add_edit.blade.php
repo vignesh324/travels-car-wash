@@ -1,24 +1,43 @@
 <form id="quick-trip-execution-form" class="quick-trip-execution p-3 p-md-4"
      data-configurations-url="{{ route('trips.quick-execution.configurations') }}"
      data-generate-url="{{ route('trips.quick-execution.generate') }}"
+     data-vehicle-show-url="{{ route('vehicles.show', ['vehicle' => 0]) }}"
      data-initial-customer-id="{{ $initialCustomerId ?? '' }}"
+     data-initial-execution-id="{{ $initialExecutionId ?? '' }}"
+     data-initial-vehicle-id="{{ $initialVehicleId ?? '' }}"
      data-initial-trip-date="{{ $initialTripDate ?? now()->toDateString() }}"
      data-initial-configuration-id="{{ $initialConfigurationId ?? '' }}">
-    <div class="row g-3 align-items-end mb-3">
-        <div class="col-12 col-md-6 col-xl-3">
-            <label for="quick-exec-customer" class="form-label">Customer *</label>
-            <select id="quick-exec-customer" class="form-select" required>
-                <option value="">Select customer</option>
-                @foreach($customers as $customer)
-                    <option value="{{ $customer->id }}" @selected((string) ($initialCustomerId ?? '') === (string) $customer->id)>{{ $customer->displayName() }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-12 col-md-6 col-xl-3">
-            <label for="quick-exec-date" class="form-label">Trip Date *</label>
-            <input id="quick-exec-date" type="date" value="{{ $initialTripDate ?? now()->toDateString() }}" class="form-control" required>
-        </div>
-    </div>
+     @php $initialVehicle = $vehicles->firstWhere('id', (int) ($initialVehicleId ?? 0)); @endphp
+     <div class="row g-3 align-items-end mb-3">
+         <div class="col-12 col-md-6 col-xl-3">
+             <label for="quick-exec-customer" class="form-label">Customer *</label>
+             <select id="quick-exec-customer" class="form-select" required>
+                 <option value="">Select customer</option>
+                 @foreach($customers as $customer)
+                     <option value="{{ $customer->id }}" @selected((string) ($initialCustomerId ?? '') === (string) $customer->id)>{{ $customer->displayName() }}</option>
+                 @endforeach
+             </select>
+         </div>
+         <div class="col-12 col-md-6 col-xl-3">
+             <label for="quick-exec-date" class="form-label">Trip Date *</label>
+             <input id="quick-exec-date" type="date" value="{{ $initialTripDate ?? now()->toDateString() }}" class="form-control" required>
+         </div>
+         <div class="col-12 col-md-6 col-xl-3">
+             <label for="quick-exec-vehicle" class="form-label">Vehicle *</label>
+             <select id="quick-exec-vehicle" class="form-select" required>
+                 <option value="">Select vehicle</option>
+                 @foreach($vehicles as $vehicle)
+                     <option value="{{ $vehicle->id }}" data-default-driver="{{ $vehicle->default_driver_name ?? '' }}" @selected((string) ($initialVehicleId ?? '') === (string) $vehicle->id)>
+                         {{ $vehicle->registration_number }} {{ $vehicle->name }}
+                     </option>
+                 @endforeach
+             </select>
+         </div>
+         <div class="col-12 col-md-6 col-xl-3">
+             <label for="quick-exec-driver-name" class="form-label">Driver name</label>
+             <input id="quick-exec-driver-name" type="text" class="form-control" maxlength="100" value="{{ $initialVehicle?->default_driver_name ?? '' }}">
+         </div>
+     </div>
 
     <section class="card">
         <div class="card-header">

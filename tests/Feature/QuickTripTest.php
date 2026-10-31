@@ -7,6 +7,7 @@ use App\Models\QuickTripConfiguration;
 use App\Models\QuickTripExecution;
 use App\Models\Trip;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -398,9 +399,47 @@ class QuickTripTest extends TestCase
             ->assertJsonPath('0.drop_count', 0);
     }
 
+    public function test_api_quick_trip_execution_supports_vehicle_and_driver_details(): void
+    {
+        $vehicle = Vehicle::create([
+            'registration_number' => 'QT-API-001',
+            'name' => 'Quick Trip Van',
+            'fuel_type' => 'Diesel',
+            'ownership_type' => 'Owned',
+            'default_driver_name' => 'Default Driver',
+        ]);
+
+        $this->actingAs($this->user)
+            ->getJson('/api/vehicles')
+            ->assertOk()
+            ->assertJsonPath('0.default_driver_name', 'Default Driver');
+
+        $this->actingAs($this->user)
+            ->postJson('/api/trips/quick-execution/generate', $this->generatePayload([
+                $this->entry($this->configuration, 2, 1),
+            ], [
+                'vehicle_id' => $vehicle->id,
+                'driver_name' => 'Edited Driver',
+            ]))
+            ->assertOk()
+            ->assertJsonPath('created', 1);
+
+        $this->assertDatabaseHas('quick_trip_executions', [
+            'quick_trip_configuration_id' => $this->configuration->id,
+            'vehicle_id' => $vehicle->id,
+            'driver_name' => 'Edited Driver',
+        ]);
+
+        $this->actingAs($this->user)
+            ->getJson('/api/trips/quick-execution/configurations?customer_id='.$this->customer->id.'&trip_date=2026-10-27')
+            ->assertOk()
+            ->assertJsonPath('0.vehicle_id', $vehicle->id)
+            ->assertJsonPath('0.driver_name', 'Edited Driver');
+    }
+
     public function test_execution_index_lists_saved_executions_with_saved_charge_and_filters(): void
     {
-        QuickTripExecution::create([
+        $execution = QuickTripExecution::create([
             'customer_id' => $this->customer->id,
             'quick_trip_configuration_id' => $this->configuration->id,
             'trip_date' => '2026-10-27',
@@ -436,6 +475,7 @@ class QuickTripTest extends TestCase
             ->assertJsonPath('data.0.total_amount', 880)
             ->assertJsonPath('data.0.is_invoiced', false)
             ->assertJsonPath('data.0.actions', fn ($html) => str_contains($html, 'Edit counts')
+                && str_contains($html, 'data-execution-id="'.$execution->id.'"')
                 && str_contains($html, 'data-configuration-id="'.$this->configuration->id.'"'))
             ->assertJsonPath('data.0.pickup_count', 5)
             ->assertJsonPath('data.0.drop_count', 3);
@@ -473,6 +513,41 @@ class QuickTripTest extends TestCase
 
         $this->configuration->update(['per_trip_charge' => 300]);
         $this->assertSame('125.00', QuickTripExecution::firstOrFail()->per_trip_charge);
+    }
+
+    public function test_editing_execution_by_id_updates_the_existing_record(): void
+    {
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($this->configuration, 2, 1),
+            ]))
+            ->assertOk()
+            ->assertJsonPath('created', 1);
+        $execution = QuickTripExecution::firstOrFail();
+        $otherCustomer = Customer::create(['type' => 'individual', 'name' => 'Updated customer']);
+        $otherConfiguration = $this->makeConfiguration([
+            'customer_id' => $otherCustomer->id,
+            'name' => 'Updated configuration',
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('trips.quick-execution.generate'), $this->generatePayload([
+                $this->entry($otherConfiguration, 4, 2),
+            ], [
+                'execution_id' => $execution->id,
+                'customer_id' => $otherCustomer->id,
+                'trip_date' => '2026-10-28',
+            ]))
+            ->assertOk()
+            ->assertJsonPath('created', 0)
+            ->assertJsonPath('updated', 1);
+
+        $this->assertSame(1, QuickTripExecution::count());
+        $this->assertSame($otherCustomer->id, $execution->fresh()->customer_id);
+        $this->assertSame($otherConfiguration->id, $execution->fresh()->quick_trip_configuration_id);
+        $this->assertSame('2026-10-28', $execution->fresh()->trip_date->toDateString());
+        $this->assertSame(4, $execution->fresh()->pickup_count);
+        $this->assertSame(2, $execution->fresh()->drop_count);
     }
 
     public function test_execution_supports_multiple_configurations_and_count_reconciliation(): void

@@ -13,11 +13,16 @@
 
         const find = selector => root.querySelector(selector);
         const customer = find('#quick-exec-customer');
+        const vehicle = find('#quick-exec-vehicle');
+        const driverName = find('#quick-exec-driver-name');
         const date = find('#quick-exec-date');
         const initialCustomerId = root.dataset.initialCustomerId || '';
+        const initialExecutionId = root.dataset.initialExecutionId || '';
+        const initialVehicleId = root.dataset.initialVehicleId || '';
         const initialTripDate = root.dataset.initialTripDate || date.value;
         const initialConfigurationId = root.dataset.initialConfigurationId || '';
         if (initialCustomerId) customer.value = initialCustomerId;
+        if (initialVehicleId) vehicle.value = initialVehicleId;
         if (initialTripDate) date.value = initialTripDate;
         const inputsElement = find('#quick-exec-inputs');
         const generateButton = find('#quick-exec-generate');
@@ -86,6 +91,31 @@
             }
 
             return pricingForTrips(row.configuration, totalTrips).amount;
+        }
+
+        async function syncDriverFromVehicle() {
+            if (!vehicle || !vehicle.value) {
+                driverName.value = '';
+                return;
+            }
+
+            const showUrl = root.dataset.vehicleShowUrl || '';
+            if (!showUrl) {
+                const selectedVehicle = vehicle?.selectedOptions?.[0];
+                driverName.value = selectedVehicle?.dataset?.defaultDriver ?? '';
+                return;
+            }
+
+            try {
+                const url = showUrl.replace(/0$/, vehicle.value);
+                const response = await fetch(url, {headers: {'Accept': 'application/json'}});
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Unable to load vehicle data.');
+                driverName.value = data.default_driver_name || '';
+            } catch (error) {
+                const selectedVehicle = vehicle?.selectedOptions?.[0];
+                driverName.value = selectedVehicle?.dataset?.defaultDriver ?? '';
+            }
         }
 
         function updateTotals() {
@@ -171,6 +201,16 @@
             generateButton.disabled = !currentCustomer || !hasConfiguration;
         }
 
+        function applyVehicleDefaultsFromSelection() {
+            const selectedVehicle = vehicle?.selectedOptions?.[0];
+            const defaultDriver = selectedVehicle?.dataset?.defaultDriver ?? '';
+            if (vehicle.value) {
+                driverName.value = driverName.value.trim() || defaultDriver;
+            } else {
+                driverName.value = '';
+            }
+        }
+
         function makeRow(configuration = null) {
             const pickupCount = Number(configuration?.pickup_count || 0);
             const dropCount = Number(configuration?.drop_count || 0);
@@ -222,6 +262,13 @@
                 const selectedConfiguration = data.find(configuration =>
                     String(configuration.id) === String(selectedConfigurationId)
                 ) || null;
+                const selectedVehicleId = selectedConfiguration?.vehicle_id ?? '';
+                if (selectedVehicleId) {
+                    vehicle.value = selectedVehicleId;
+                    await syncDriverFromVehicle();
+                } else if (!vehicle.value) {
+                    driverName.value = '';
+                }
                 rows = data.length ? [makeRow(selectedConfiguration)] : [];
                 renderRows();
                 status.textContent = data.length
@@ -245,6 +292,14 @@
                 return;
             }
             loadConfigurations();
+        });
+
+        vehicle.addEventListener('change', async () => {
+            if (!vehicle.value) {
+                driverName.value = '';
+                return;
+            }
+            await syncDriverFromVehicle();
         });
 
         date.addEventListener('change', event => {
@@ -302,14 +357,16 @@
 
             const customerId = customer.value;
             const tripDate = date.value;
+            const vehicleId = vehicle.value;
+            const driverValue = (driverName.value || '').trim();
             const entries = rows.filter(row => row.configurationId).map(row => ({
                 configuration_id: row.configurationId,
                 pickup_count: row.pickupCount,
                 drop_count: row.dropCount,
             }));
             error.textContent = '';
-            if (!customerId || !tripDate || entries.length === 0) {
-                error.textContent = 'Select a customer, trip date, and one configured Quick Trip.';
+            if (!customerId || !tripDate || !vehicleId || entries.length === 0) {
+                error.textContent = 'Select a customer, vehicle, trip date, and one configured Quick Trip.';
                 return;
             }
             if (entries.some(entry => !Number.isInteger(Number(entry.pickup_count)) || Number(entry.pickup_count) < 0
@@ -329,6 +386,9 @@
                     },
                     body: JSON.stringify({
                         customer_id: customerId,
+                        execution_id: initialExecutionId || null,
+                        vehicle_id: vehicleId,
+                        driver_name: driverValue || null,
                         trip_date: tripDate,
                         entries,
                     }),
@@ -348,6 +408,10 @@
             }
         });
 
-        if (initialCustomerId) loadConfigurations(initialConfigurationId);
+        if (initialCustomerId) {
+            loadConfigurations(initialConfigurationId);
+        } else if (vehicle.value) {
+            syncDriverFromVehicle();
+        }
     };
 })();

@@ -10,9 +10,11 @@ class QuickTripExecution extends Model
 {
     use HasAuditFields, HasUuid;
 
+    protected $appends = ['vehicle', 'vehicle_name', 'driver_name'];
+
     protected $fillable = [
-        'customer_id', 'quick_trip_configuration_id', 'trip_date', 'pickup_count', 'drop_count',
-        'per_trip_charge', 'total_amount',
+        'customer_id', 'vehicle_id', 'quick_trip_configuration_id', 'trip_date', 'pickup_count', 'drop_count',
+        'driver_name', 'per_trip_charge', 'total_amount',
     ];
 
     protected $casts = [
@@ -26,6 +28,11 @@ class QuickTripExecution extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class);
     }
 
     public function configuration()
@@ -47,6 +54,44 @@ class QuickTripExecution extends Model
     public function invoiceLinks()
     {
         return $this->hasMany(InvoiceQuickTripLink::class);
+    }
+
+    public function getVehicleAttribute(): ?Vehicle
+    {
+        if ($this->vehicle_id) {
+            return $this->relationLoaded('vehicle') ? $this->getRelation('vehicle') : $this->vehicle()->first();
+        }
+
+        $trip = $this->primaryTrip();
+
+        return $trip?->vehicle;
+    }
+
+    public function getVehicleNameAttribute(): ?string
+    {
+        return $this->vehicle?->name ?? $this->primaryTrip()?->vehicle?->name;
+    }
+
+    public function getDriverNameAttribute(): ?string
+    {
+        $driverName = $this->getAttributeFromArray('driver_name');
+        if (! empty($driverName)) {
+            return $driverName;
+        }
+
+        $trip = $this->primaryTrip();
+
+        return $trip?->driver_name ?: $this->vehicle?->default_driver_name;
+    }
+
+    public function primaryTrip(): ?Trip
+    {
+        return $this->trips()
+            ->with('vehicle')
+            ->orderBy('trip_date')
+            ->orderBy('quick_trip_sequence')
+            ->orderBy('id')
+            ->first();
     }
 
     public function amount(): float

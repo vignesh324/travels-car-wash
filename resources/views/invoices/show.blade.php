@@ -182,16 +182,20 @@
                 <div class="table-responsive invoice-table-wrap">
                     <table class="table table-sm align-middle invoice-table mb-0">
                         <thead>
-                            <tr><th>Service date</th><th>Quick Trip</th><th>Pickup location</th><th>Drop location</th><th class="text-end">Pickup count</th><th class="text-end">Drop count</th><th class="text-end">Rate on last trip</th><th class="text-end">Amount</th></tr>
+                            <tr><th>Service date</th><th>Vehicle</th><th>Driver</th><th>Quick Trip</th><th>Pickup location</th><th>Drop location</th><th class="text-end">Pickup count</th><th class="text-end">Drop count</th><th class="text-end">Rate on last trip</th><th class="text-end">Amount</th></tr>
                         </thead>
                         <tbody>
                             @foreach($quickTrips as $execution)
                                 @php
                                     $rate = (float) ($execution->per_trip_charge ?? $execution->configuration?->per_trip_charge ?? 0);
                                     $amount = $execution->amount();
+                                    $vehicleName = $execution->vehicle?->registration_number ?: $execution->vehicle?->name ?: $execution->vehicle_name ?: 'Vehicle not recorded';
+                                    $driverName = $execution->driver_name ?: '—';
                                 @endphp
                                 <tr>
                                     <td>{{ $execution->trip_date?->format('M j, Y') ?? '—' }}</td>
+                                    <td>{{ $vehicleName }}</td>
+                                    <td>{{ $driverName }}</td>
                                     <td>{{ $execution->configuration?->name ?? 'Quick Trip' }}</td>
                                     <td>{{ $execution->configuration?->pickup_location ?? '—' }}</td>
                                     <td>{{ $execution->configuration?->drop_location ?? '—' }}</td>
